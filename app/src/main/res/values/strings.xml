@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">More Overlays!</string>
+    <string name="accessibility_label">More Overlays</string>
+    <string name="accessibility_service_description">Accessibility Service\n</string>
+</resources>
