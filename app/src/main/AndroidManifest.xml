@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 
-    <!-- SO AS TO I COULD GET APPS INFO ON DEVICE -->
+    <!-- SO AS TO I COULD GET RIGHT APPS INFO ON DEVICE -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />

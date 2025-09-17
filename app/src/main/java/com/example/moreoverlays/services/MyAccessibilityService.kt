@@ -1,8 +1,6 @@
 package com.example.moreoverlays.services
 
 import android.accessibilityservice.AccessibilityService
-import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -17,8 +15,11 @@ import android.widget.Toast
 import android.graphics.Color
 import android.os.Build
 import android.view.Window
-import com.example.moreoverlays.OverlayItem
-import com.example.moreoverlays.utils.AppInfo
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import com.example.moreoverlays.database.AppData
+import com.example.moreoverlays.database.OverlayConfig
 import com.example.moreoverlays.utils.CATCHER_OVERLAY
 import com.example.moreoverlays.utils.LEFT_SWIPE_OVERLAY
 import com.example.moreoverlays.utils.MAIN_OVERLAY
@@ -32,22 +33,24 @@ class MyAccessibilityService : AccessibilityService() {
     private var startX = 0f
     private var startY = 0f
     private var isActive: Boolean = false
-    private var overlayList = arrayListOf<OverlayItem>()
+    private var overlayList = arrayListOf<OverlayConfig>()
     private val overlayViewsMap = mutableMapOf<Int, View>()
-    private var appsList = listOf<AppInfo>()
+    private var appsList = listOf<AppData>()
+    private lateinit var selectedApps: MutableSet<String>
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
 
-        val sharedPrefs = getSharedPreferences("overlay_prefs", Context.MODE_PRIVATE)
+        val sharedPrefs = getSharedPreferences("global_prefs", Context.MODE_PRIVATE)
         val json = sharedPrefs.getString("overlay_list", null)
+        selectedApps = sharedPrefs.getStringSet("selectedApps", null)?.toMutableSet() ?: mutableSetOf()
 
         appsList = getInstalledApps(this)
 
         if (json != null) {
-            val type = object : TypeToken<ArrayList<OverlayItem>>() {}.type
+            val type = object : TypeToken<ArrayList<OverlayConfig>>() {}.type
             overlayList = Gson().fromJson(json, type)
             createAllViews()
             showOverlayById(MAIN_OVERLAY)
@@ -74,29 +77,39 @@ class MyAccessibilityService : AccessibilityService() {
         val rawX = event?.rawX // screen global coordinates
         val rawY = event?.rawY
 
-        if (event != null) {
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    startX = rawX!!
-                    startY = rawY!!
-                    Log.d("GestureService", "Touch down at: ($rawX, $rawY)")
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    Log.d("GestureService", "Touch move at: ($rawX, $rawY)")
-                }
-                MotionEvent.ACTION_UP -> {
-                    Log.d("GestureService", "Touch up at: ($rawX, $rawY)")
-                    if (id == MAIN_OVERLAY) {
+
+        when (event?.action) {
+            MotionEvent.ACTION_DOWN -> {
+                startX = rawX!!
+                startY = rawY!!
+                Log.d("GestureService", "Touch down at: ($rawX, $rawY)")
+            }
+            MotionEvent.ACTION_MOVE -> {
+                Log.d("GestureService", "Touch move at: ($rawX, $rawY)")
+            }
+            MotionEvent.ACTION_UP -> {
+                Log.d("GestureService", "Touch up at: ($rawX, $rawY)")
+
+                when (id) {
+                    MAIN_OVERLAY -> {
                         recognizeGesture(rawX!!, rawY!!)
-                    } else if (id == CATCHER_OVERLAY && isActive) {
-                        showOverlayById(MAIN_OVERLAY)
-                        hideOverlaysExcept(MAIN_OVERLAY)
+                    }
+
+                    CATCHER_OVERLAY -> {
+                        if (isActive) {
+                            showOverlayById(MAIN_OVERLAY)
+                            hideOverlaysExcept(MAIN_OVERLAY)
+                        }
+                    }
+                    else -> {
+
                     }
                 }
-                MotionEvent.ACTION_OUTSIDE -> {}
 
             }
+
         }
+
     }
 
 
@@ -146,32 +159,47 @@ class MyAccessibilityService : AccessibilityService() {
             val overlayView = item.createOverlay(this)
             overlayView.visibility = View.GONE
             overlayView.id = item.id
+            val params: WindowManager.LayoutParams
 
-            val params = WindowManager.LayoutParams(
-                item.width,
-                item.height,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                PixelFormat.TRANSLUCENT
-            ).apply {
-                gravity = Gravity.BOTTOM or Gravity.END
-                x = item.x
-                y = item.y
+            if (item.id == MAIN_OVERLAY) {
+                params = WindowManager.LayoutParams(
+                    item.width,
+                    item.height,
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                    PixelFormat.TRANSLUCENT
+                ).apply {
+                    gravity = Gravity.BOTTOM or Gravity.END
+                    x = item.x
+                    y = item.y
+                }
+            } else {
+                params = WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                    PixelFormat.TRANSLUCENT
+                ).apply {
+                    gravity = Gravity.BOTTOM or Gravity.END
+                    x = item.x
+                    y = item.y
+                }
             }
 
             overlayView.setOnTouchListener { view, event ->
                 handleTouch(event, view.id)
-                if (view.id != CATCHER_OVERLAY) {
-                    view.performClick()
-                } else false
+                if (view.id != CATCHER_OVERLAY) view.performClick() else false
             }
 
             windowManager.addView(overlayView, params)
             overlayViewsMap[item.id] = overlayView
-        }
 
+        }
     }
+
 
 
     private fun showOverlayById(id: Int) {
