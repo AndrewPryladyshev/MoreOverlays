@@ -5,8 +5,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.moreoverlays.Apps
 import com.example.moreoverlays.ContentTypeData
+import com.example.moreoverlays.Notes
 import com.example.moreoverlays.R
+import com.example.moreoverlays.Widgets
 
 class ViewsOnOverlayRecyclerViewAdapter(
     private var items: List<ContentTypeData>,
@@ -31,15 +34,15 @@ class ViewsOnOverlayRecyclerViewAdapter(
         val currentItem = items[position]
 
         when (currentItem) {
-            is ContentTypeData.Apps -> {
+            is Apps -> {
                 val appsId = currentItem.id // <- вот он, id внутри класса Apps
                 holder.textView.text = "$appsId"
             }
-            is ContentTypeData.Widgets -> {
+            is Widgets -> {
                 val widgetId = currentItem.id
                 holder.textView.text = "$widgetId"
             }
-            is ContentTypeData.Notes -> {
+            is Notes -> {
                 val noteId = currentItem.id
                 holder.textView.text = "$noteId"
             }

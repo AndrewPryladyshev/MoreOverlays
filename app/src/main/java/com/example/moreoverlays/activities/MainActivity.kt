@@ -12,6 +12,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Room
+import com.example.moreoverlays.Apps
 import com.example.moreoverlays.ContentTypeData
 import com.example.moreoverlays.R
 import com.example.moreoverlays.database.AppData
@@ -49,7 +50,9 @@ class MainActivity : AppCompatActivity() {
             OverlayConfig(MAIN_OVERLAY, "",40, 500, 0, 100, listOf()),
             OverlayConfig(DOWN_SWIPE_RIGHT_SIDE_OVERLAY, "Right Down Swipe Overlay", 40, 500, 0, 100, listOf()),
             OverlayConfig(LEFT_SWIPE_OVERLAY, "Left Swipe Overlay",500, 500, 100, 500, listOf()),
-            OverlayConfig(UP_SWIPE_RIGHT_SIDE_OVERLAY, "Right Up Swipe Overlay", 40, 500, 0, 100, listOf(ContentTypeData.Apps(1, listOf()))),
+            OverlayConfig(UP_SWIPE_RIGHT_SIDE_OVERLAY, "Right Up Swipe Overlay", 40, 500, 0, 100, listOf(
+                Apps(1, listOf())
+            )),
             OverlayConfig(DOWN_SWIPE_LEFT_SIDE_OVERLAY, "Left Down Swipe Overlay",40, 500, 0, 100, listOf()),
             OverlayConfig(RIGHT_SWIPE_OVERLAY, "Right Swipe Overlay",40, 500, 0, 100, listOf()),
             OverlayConfig(UP_SWIPE_LEFT_SIDE_OVERLAY, "Left Up Swipe Overlay",40, 500, 0, 100, listOf()),

@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [ AppData::class, OverlayConfig::class], version = 1)
+@Database(entities = [ AppData::class, OverlayConfig::class], version = 2)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun daoApps() : AppsDao

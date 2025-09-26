@@ -26,6 +26,7 @@ import com.example.moreoverlays.utils.MAIN_OVERLAY
 import com.example.moreoverlays.utils.getInstalledApps
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.serialization.json.Json
 import kotlin.math.atan2
 
 class MyAccessibilityService : AccessibilityService() {
@@ -50,8 +51,8 @@ class MyAccessibilityService : AccessibilityService() {
         appsList = getInstalledApps(this)
 
         if (json != null) {
-            val type = object : TypeToken<ArrayList<OverlayConfig>>() {}.type
-            overlayList = Gson().fromJson(json, type)
+            val jsonParser = Json { ignoreUnknownKeys = true }
+            overlayList = jsonParser.decodeFromString<ArrayList<OverlayConfig>>(json)
             createAllViews()
             showOverlayById(MAIN_OVERLAY)
 
@@ -111,7 +112,6 @@ class MyAccessibilityService : AccessibilityService() {
         }
 
     }
-
 
     // WHICH GESTURE WAS MADE
     private fun recognizeGesture(endX: Float, endY: Float) {

@@ -5,28 +5,28 @@ import com.example.moreoverlays.ContentTypeData
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class Converters {
-    @TypeConverter
-    fun fromList(list: List<Int>): String {
-        return list.joinToString(",")
+
+    private val json = Json {
+        encodeDefaults = true
+        prettyPrint = true
+        classDiscriminator = "type" // обязательно, чтобы понимать, какой класс десериализовать
+        ignoreUnknownKeys = true
     }
 
     @TypeConverter
-    fun toList(data: String): List<Int> {
-        return if (data.isEmpty()) emptyList()
-        else data.split(",").map { it.toInt() }
+    fun fromContentTypeList(value: List<ContentTypeData>): String {
+        return json.encodeToString(value)
+    }
+
+    @TypeConverter
+    fun toContentTypeList(value: String): List<ContentTypeData> {
+        return json.decodeFromString(value)
     }
 
 
-//    @TypeConverter
-//    fun fromContentTypes(content: List<ContentTypeData>): String {
-//        return gson.toJson(content)
-//    }
-//
-//    @TypeConverter
-//    fun toContentTypes(data: String): List<ContentTypeData> {
-//        val listType = TypeToken.getParameterized(List::class.java, ContentTypeData::class.java).type
-//        return gson.fromJson(data, listType)
-//    }
 }

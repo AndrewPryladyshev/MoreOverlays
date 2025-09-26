@@ -11,6 +11,7 @@ import com.example.moreoverlays.adapters.RootOverlaysRecyclerViewAdapter
 import com.example.moreoverlays.database.OverlayConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.serialization.json.Json
 
 class MainFragment : Fragment(R.layout.fragment_main) {
 
@@ -23,8 +24,12 @@ class MainFragment : Fragment(R.layout.fragment_main) {
         val prefs = requireContext().getSharedPreferences("global_prefs", MODE_PRIVATE)
         val json = prefs.getString("overlay_list", null)
 
-        val type = object : TypeToken<ArrayList<OverlayConfig>>() {}.type
-        val overlayList: ArrayList<OverlayConfig> = Gson().fromJson(json, type)
+        val overlayList = if (json != null) {
+            val jsonParser = Json { ignoreUnknownKeys = true }
+            jsonParser.decodeFromString<ArrayList<OverlayConfig>>(json)
+        } else {
+            arrayListOf()
+        }
         overlayList.removeAll { it.id == -1 || it.id == 0 }
 
 

@@ -10,8 +10,10 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.moreoverlays.ContentTypeData
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 
 
+@Serializable
 @Parcelize
 @Entity(tableName = "apps")
 data class AppData(
@@ -26,6 +28,7 @@ data class Widgets(
     // TODO: FINISH DATABASE AFTER APPS WILL FULLY WORK
 )
 
+@Serializable
 @Parcelize
 @Entity(tableName = "overlay_configs")
 data class OverlayConfig(
