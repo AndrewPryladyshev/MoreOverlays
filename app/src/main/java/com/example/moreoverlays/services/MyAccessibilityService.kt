@@ -14,11 +14,15 @@ import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
 import android.graphics.Color
 import android.os.Build
+import android.view.ViewGroup
 import android.view.Window
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.room.Dao
+import androidx.room.Database
 import com.example.moreoverlays.database.AppData
+import com.example.moreoverlays.database.AppDatabase
 import com.example.moreoverlays.database.OverlayConfig
 import com.example.moreoverlays.utils.CATCHER_OVERLAY
 import com.example.moreoverlays.utils.LEFT_SWIPE_OVERLAY
@@ -26,6 +30,10 @@ import com.example.moreoverlays.utils.MAIN_OVERLAY
 import com.example.moreoverlays.utils.getInstalledApps
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlin.math.atan2
 
@@ -37,23 +45,35 @@ class MyAccessibilityService : AccessibilityService() {
     private var overlayList = arrayListOf<OverlayConfig>()
     private val overlayViewsMap = mutableMapOf<Int, View>()
     private var appsList = listOf<AppData>()
-    private lateinit var selectedApps: MutableSet<String>
+    private lateinit var selectedApps: MutableList<AppData>
+    private lateinit var db: AppDatabase
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-
         val sharedPrefs = getSharedPreferences("global_prefs", Context.MODE_PRIVATE)
         val json = sharedPrefs.getString("overlay_list", null)
-        selectedApps = sharedPrefs.getStringSet("selectedApps", null)?.toMutableSet() ?: mutableSetOf()
+        //selectedApps = sharedPrefs.getStringSet("selectedApps", null)?.toMutableSet() ?: mutableSetOf()
+        //Log.i("SelectedApps: ", "$selectedApps")
+        // appsList = getInstalledApps(this)
 
-        appsList = getInstalledApps(this)
+        serviceScope.launch {
+            val appsDao = AppDatabase.getInstance(applicationContext).daoApps()
+
+            selectedApps = appsDao.getSelectedApps()
+            launch(Dispatchers.Main) {
+                val appsView = createAppsView(this@MyAccessibilityService, selectedApps)
+                setOverlayContent(LEFT_SWIPE_OVERLAY, appsView)
+            }
+        }
 
         if (json != null) {
             val jsonParser = Json { ignoreUnknownKeys = true }
             overlayList = jsonParser.decodeFromString<ArrayList<OverlayConfig>>(json)
-            createAllViews()
+            createAllOverlays()
             showOverlayById(MAIN_OVERLAY)
 
 
@@ -104,7 +124,7 @@ class MyAccessibilityService : AccessibilityService() {
                     }
                     else -> {
 
-                    }
+                        }
                 }
 
             }
@@ -129,6 +149,7 @@ class MyAccessibilityService : AccessibilityService() {
             angle in -157.5..-112.5 -> {
                 show("↖ Left Up Swipe")
             }
+            // LEFT SWIPE
             angle > 157.5 || angle < -157.5 -> {
                 show("← Left Swipe")
                 hideOverlayById(MAIN_OVERLAY)
@@ -140,7 +161,7 @@ class MyAccessibilityService : AccessibilityService() {
             }
             else -> {
                 Log.d("GestureService", "Unrecognized gesture with angle: $angle")
-                show("IDK WTF IS THAT")
+                show("IDK WTF IS THAT BITCH")
             }
         }
     }
@@ -153,7 +174,7 @@ class MyAccessibilityService : AccessibilityService() {
 
 
     // GET LIST WITH OVERLAYS PARAMS FROM OTHER ACTIVITY AND CREATE OVERLAYS FOR EACH ONE
-    private fun createAllViews() {
+    private fun createAllOverlays() {
 
         overlayList.forEach { item ->
             val overlayView = item.createOverlay(this)
@@ -161,31 +182,48 @@ class MyAccessibilityService : AccessibilityService() {
             overlayView.id = item.id
             val params: WindowManager.LayoutParams
 
-            if (item.id == MAIN_OVERLAY) {
-                params = WindowManager.LayoutParams(
-                    item.width,
-                    item.height,
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                    PixelFormat.TRANSLUCENT
-                ).apply {
-                    gravity = Gravity.BOTTOM or Gravity.END
-                    x = item.x
-                    y = item.y
+
+            when (item.id) {
+                MAIN_OVERLAY -> {
+                    params = WindowManager.LayoutParams(
+                        item.width,
+                        item.height,
+                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                        PixelFormat.TRANSLUCENT
+                    ).apply {
+                        gravity = Gravity.BOTTOM or Gravity.END
+                        x = item.x
+                        y = item.y
+                    }
                 }
-            } else {
-                params = WindowManager.LayoutParams(
-                    WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                    PixelFormat.TRANSLUCENT
-                ).apply {
-                    gravity = Gravity.BOTTOM or Gravity.END
-                    x = item.x
-                    y = item.y
+                CATCHER_OVERLAY -> {
+                    params = WindowManager.LayoutParams(
+                        WindowManager.LayoutParams.MATCH_PARENT,
+                        WindowManager.LayoutParams.MATCH_PARENT,
+                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                        PixelFormat.TRANSLUCENT
+                    ).apply {
+                        gravity = Gravity.BOTTOM or Gravity.END
+                        x = item.x
+                        y = item.y
+                    }
+                }
+                else -> {
+                    params = WindowManager.LayoutParams(
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                        PixelFormat.TRANSLUCENT
+                    ).apply {
+                        gravity = Gravity.BOTTOM or Gravity.END
+                        x = item.x
+                        y = item.y
+                    }
                 }
             }
 
@@ -200,7 +238,39 @@ class MyAccessibilityService : AccessibilityService() {
         }
     }
 
+    private fun createAppsView(context: Context, apps: List<AppData>): View {
 
+        val layout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.WHITE)
+            setPadding(32, 32, 32, 32)
+        }
+
+        for (app in apps) {
+            val icon = ImageView(context).apply {
+                setImageDrawable(context.packageManager.getApplicationIcon(app.appPackage))
+                layoutParams = LinearLayout.LayoutParams(150, 150).apply {
+                    //marginEnd = 16
+                }
+                setOnClickListener {
+                    val intent = context.packageManager.getLaunchIntentForPackage(app.appPackage)
+                    intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                }
+            }
+            layout.addView(icon)
+        }
+        return layout
+    }
+
+    // set new content on overlay
+    // TODO: REWORK THIS FUNCTION FOR RUNTIME VIEWS CHANGING
+    private fun setOverlayContent(overlayId: Int, newContent: View) {
+        val container = overlayViewsMap[overlayId] as? ViewGroup ?: return
+        val catcherOverlay = overlayViewsMap[CATCHER_OVERLAY] as? ViewGroup ?: return
+        container.removeAllViews()
+        container.addView(newContent)
+    }
 
     private fun showOverlayById(id: Int) {
         overlayViewsMap[id]?.visibility = View.VISIBLE
@@ -221,4 +291,11 @@ class MyAccessibilityService : AccessibilityService() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceJob.cancel()
+    }
+
 }
+
+// TODO: MAKE DISPLAYING APPS ON OVERLAY MORE FLEXIBLE. NOW CHANGE APPS DISPLAY POSSIBLE ONLY IN THE CODE

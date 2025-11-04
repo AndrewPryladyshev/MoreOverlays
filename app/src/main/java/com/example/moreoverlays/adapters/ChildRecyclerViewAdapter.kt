@@ -5,11 +5,26 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.compose.animation.core.updateTransition
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
+import com.example.moreoverlays.Apps
+import com.example.moreoverlays.Notes
 import com.example.moreoverlays.R
+import com.example.moreoverlays.Widgets
 import com.example.moreoverlays.database.AppData
+import com.example.moreoverlays.database.AppDatabase
+import com.example.moreoverlays.database.AppsDao
+import com.example.moreoverlays.database.OverlayConfig
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-class ChildRecyclerViewAdapter(private val itemList: List<AppData>) : RecyclerView.Adapter<ChildRecyclerViewAdapter.ChildViewHolder>() {
+class ChildRecyclerViewAdapter(private val itemList: List<AppData>,
+                               private val appsDao: AppsDao,
+                               private val overlayConfig: OverlayConfig,
+
+) : RecyclerView.Adapter<ChildRecyclerViewAdapter.ChildViewHolder>() {
     var selectedApps = mutableListOf<AppData>()
 
     class ChildViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -30,26 +45,54 @@ class ChildRecyclerViewAdapter(private val itemList: List<AppData>) : RecyclerVi
         holder.image.setImageDrawable(holder.image.context.packageManager.getApplicationIcon(currentItem.appPackage))
 
         holder.itemView.setOnClickListener {
+
             when (holder.checkImage.visibility) {
                 View.GONE -> {
                     holder.checkImage.visibility = View.VISIBLE
-                    selectedApps.add(currentItem)
+                    currentItem.isSelected = true
+                    CoroutineScope(Dispatchers.IO).launch {
+                        appsDao.updateApps(listOf(currentItem))
+                        val db = AppDatabase.getInstance(holder.itemView.context)
+                        val overlayDao = db.daoOverlayConfigs()
+                        val contentTypesList = overlayConfig.contentTypes
+                        contentTypesList.forEach { item ->
+                            when (item) {
+                                is Apps -> {
+                                    item.apps.add(currentItem)
+                                }
+
+                                is Notes -> TODO()
+                                is Widgets -> TODO()
+                            }
+                        }
+                    }
                 }
                 View.VISIBLE -> {
-                    if (currentItem in selectedApps) {
-                        holder.checkImage.visibility = View.GONE
-                        selectedApps.remove(currentItem)
+                    holder.checkImage.visibility = View.GONE
+                    currentItem.isSelected = false
+                    CoroutineScope(Dispatchers.IO).launch {
+                        appsDao.updateApps(listOf(currentItem))
+                        val db = AppDatabase.getInstance(holder.itemView.context)
+                        val overlayDao = db.daoOverlayConfigs()
+                        val contentTypesList = overlayConfig.contentTypes
+                        contentTypesList.forEach { item ->
+                            when (item) {
+                                is Apps -> {
+                                    item.apps.remove(currentItem)
+                                }
+
+                                is Notes -> TODO()
+                                is Widgets -> TODO()
+                            }
+                        }
                     }
                 }
                 View.INVISIBLE -> {}
             }
-            //holder.checkImage.visibility = if (holder.checkImage.visibility == View.GONE) View.VISIBLE else View.GONE
 
         }
 
     }
 
     override fun getItemCount(): Int = itemList.size
-
-
 }

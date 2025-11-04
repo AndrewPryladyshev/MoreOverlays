@@ -6,11 +6,11 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [ AppData::class, OverlayConfig::class], version = 2)
+@Database(entities = [ AppData::class, OverlayConfig::class], version = 3)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun daoApps() : AppsDao
-    abstract fun daoOverlayConfigs() : OverlayConfigs
+    abstract fun daoOverlayConfigs() : OverlayConfigsDao
 
     companion object {
         @Volatile
@@ -22,7 +22,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "app_database"
-                ).build().also { INSTANCE = it }
+                ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
             }
         }
     }

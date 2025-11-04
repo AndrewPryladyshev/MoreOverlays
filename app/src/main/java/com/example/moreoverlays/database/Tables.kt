@@ -5,6 +5,8 @@ import android.content.Context
 import android.graphics.Color
 import android.os.Parcelable
 import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -19,6 +21,7 @@ import kotlinx.serialization.Serializable
 data class AppData(
     @PrimaryKey @ColumnInfo(name = "packages") val appPackage: String,
     @ColumnInfo(name = "appsNames") val appName: String,
+    @ColumnInfo(name = "is_selected") var isSelected: Boolean = false,
 ) : Parcelable
 
 
@@ -39,12 +42,12 @@ data class OverlayConfig(
     val height: Int,
     val x: Int,
     val y: Int,
-    val contentTypes: List<ContentTypeData>,
+    var contentTypes: List<ContentTypeData>,
 //    var currentItemId: Int,
 ) : Parcelable
 {
-    fun createOverlay(context: Context) : View {
-        val overlay = View(context)
+    fun createOverlay(context: Context) : ViewGroup {
+        val overlay = FrameLayout(context)
         overlay.id = id
         overlay.setBackgroundColor(Color.WHITE)
         return overlay

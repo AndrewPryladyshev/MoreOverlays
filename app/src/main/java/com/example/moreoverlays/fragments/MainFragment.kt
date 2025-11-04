@@ -9,6 +9,7 @@ import com.example.moreoverlays.R
 import com.example.moreoverlays.activities.MainActivity
 import com.example.moreoverlays.adapters.RootOverlaysRecyclerViewAdapter
 import com.example.moreoverlays.database.OverlayConfig
+import com.example.moreoverlays.utils.JsonManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.serialization.json.Json
@@ -22,11 +23,10 @@ class MainFragment : Fragment(R.layout.fragment_main) {
 
         // TODO: CHANGE DATA GETTING FROM THIS TO DB
         val prefs = requireContext().getSharedPreferences("global_prefs", MODE_PRIVATE)
-        val json = prefs.getString("overlay_list", null)
+        val jsonString = prefs.getString("overlay_list", null)
 
-        val overlayList = if (json != null) {
-            val jsonParser = Json { ignoreUnknownKeys = true }
-            jsonParser.decodeFromString<ArrayList<OverlayConfig>>(json)
+        val overlayList = if (jsonString != null) {
+            JsonManager.jsonConfigured.decodeFromString<ArrayList<OverlayConfig>>(jsonString)
         } else {
             arrayListOf()
         }

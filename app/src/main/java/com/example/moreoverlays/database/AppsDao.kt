@@ -1,34 +1,49 @@
 package com.example.moreoverlays.database
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppsDao {
     @Query("""SELECT * FROM apps""")
-    suspend fun getAll(): List<AppData>
+    fun getAll(): Flow<List<AppData>>
 
     @Query("""SELECT * FROM apps WHERE appsNames IN (:chosenNames)""")
-    suspend fun loadAllByIds(chosenNames: String): List<AppData>
+    fun loadAllByIds(chosenNames: String): List<AppData>
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(appsData: List<AppData>)
+
+    @Update
+    suspend fun updateApps(apps: List<AppData>)
+
+    @Query("""SELECT * FROM apps WHERE is_selected = 1""")
+    fun getSelectedApps() : MutableList<AppData>
 }
 
 
 @Dao
-interface OverlayConfigs {
+interface OverlayConfigsDao {
     @Query("""SELECT * FROM overlay_configs""")
-    suspend fun getAll(): List<OverlayConfig>
+    fun getAll(): Flow<List<OverlayConfig>>
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllConfigs(overlayConfigs: List<OverlayConfig>)
 
     @Query("SELECT * FROM overlay_configs WHERE id = :id")
-    suspend fun getById(id: Int): OverlayConfig?
+    fun getById(id: Int): OverlayConfig?
 
     @Update
     suspend fun update(data: List<OverlayConfig>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdate(overlayConfigs: List<OverlayConfig>)
+
+    @Query("""DELETE FROM overlay_configs""")
+    suspend fun clear()
 }

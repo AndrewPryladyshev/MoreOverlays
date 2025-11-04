@@ -10,19 +10,29 @@ import com.example.moreoverlays.ContentTypeData
 import com.example.moreoverlays.Notes
 import com.example.moreoverlays.R
 import com.example.moreoverlays.Widgets
+import com.example.moreoverlays.database.OverlayConfig
 
 class ViewsOnOverlayRecyclerViewAdapter(
     private var items: List<ContentTypeData>,
-    //private val listener: RootOverlaysRecyclerViewAdapter.OnItemClickListener
+    private val listener: OnItemClickListener
 ) : RecyclerView.Adapter<ViewsOnOverlayRecyclerViewAdapter.OverlayViewsViewHolder>() {
 
 
     interface OnItemClickListener {
-        fun onClick(id: Int){}
+        fun onClick(item: ContentTypeData){}
+        fun onLongClick(item: ContentTypeData): Boolean
     }
 
     inner class OverlayViewsViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val textView: TextView = itemView.findViewById(R.id.text)
+        fun bind(item: ContentTypeData) {
+            itemView.setOnClickListener {
+                listener.onClick(item)
+            }
+            itemView.setOnLongClickListener {
+                listener.onLongClick(item)
+            }
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OverlayViewsViewHolder {
@@ -35,19 +45,21 @@ class ViewsOnOverlayRecyclerViewAdapter(
 
         when (currentItem) {
             is Apps -> {
-                val appsId = currentItem.id // <- вот он, id внутри класса Apps
-                holder.textView.text = "$appsId"
+                val appsId = currentItem.id
+                holder.textView.text = currentItem.title
             }
             is Widgets -> {
                 val widgetId = currentItem.id
-                holder.textView.text = "$widgetId"
+                holder.textView.text = currentItem.title
             }
             is Notes -> {
                 val noteId = currentItem.id
-                holder.textView.text = "$noteId"
+                holder.textView.text = currentItem.title
             }
         }
-        holder.textView.text = currentItem.toString()
+
+        holder.bind(currentItem)
+
     }
 
     override fun getItemCount(): Int = items.size

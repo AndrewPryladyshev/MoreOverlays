@@ -25,7 +25,7 @@ class ParentRecyclerViewAdapter(private val items: List<Parent>) : RecyclerView.
         val currentItem = items[position]
 
         holder.button.text = currentItem.text
-        holder.recyclerView.adapter = ChildRecyclerViewAdapter(currentItem.appList)
+        //holder.recyclerView.adapter = ChildRecyclerViewAdapter(currentItem.appList)
 
         holder.recyclerView.apply {
             layoutManager = GridLayoutManager(holder.recyclerView.context, 4)

@@ -37,7 +37,7 @@ class RootOverlaysRecyclerViewAdapter(
     override fun onBindViewHolder(holder: MainOverlaysViewHolder, position: Int) {
         val currentItem = itemsList[position]
 
-        holder.bind(itemsList[position])
+        holder.bind(currentItem)
         holder.textView.text = currentItem.name
 
     }
