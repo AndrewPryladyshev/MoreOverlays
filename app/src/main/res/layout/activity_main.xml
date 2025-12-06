@@ -5,7 +5,8 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".activities.MainActivity">
+    tools:context=".activities.MainActivity"
+    android:background="?attr/colorSurfaceContainerLow">
 
 
 <!--    <androidx.recyclerview.widget.RecyclerView-->
@@ -22,10 +23,43 @@
 <!--        android:layout_height="wrap_content"-->
 <!--        app:layout_constraintBottom_toBottomOf="parent" />-->
 
-    <FrameLayout
-        android:id="@+id/frame_layout"
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            style="@style/Widget.Material3.Toolbar.Surface"
+            android:background="?attr/colorSurfaceContainerLow"
+            app:title="More Overlays!">
+
+            <ImageButton
+                android:id="@+id/toggleThemeBtn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="top|end"
+                android:src="@drawable/ic_crescent_foreground"
+                android:scaleType="fitCenter"
+                android:background="@android:color/transparent"
+                android:clickable="true"
+                />
+
+        </com.google.android.material.appbar.MaterialToolbar>
+
+
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+<!-- tools:layout="@layout/screen_home"-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

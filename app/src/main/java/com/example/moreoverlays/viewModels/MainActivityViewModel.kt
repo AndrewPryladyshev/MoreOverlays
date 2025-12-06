@@ -1,11 +1,11 @@
-package com.example.moreoverlays.ViewModels
+package com.example.moreoverlays.viewModels
 
 import android.app.Application
 import android.util.Log
 import android.view.WindowManager
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.moreoverlays.America
 import com.example.moreoverlays.Apps
 import com.example.moreoverlays.ContentTypeData
 import com.example.moreoverlays.Notes
@@ -18,20 +18,23 @@ import com.example.moreoverlays.database.OverlayConfig
 import com.example.moreoverlays.utils.CATCHER_OVERLAY
 import com.example.moreoverlays.utils.DOWN_SWIPE_LEFT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.DOWN_SWIPE_RIGHT_SIDE_OVERLAY
+import com.example.moreoverlays.utils.LEFT_SIDE
 import com.example.moreoverlays.utils.LEFT_SWIPE_OVERLAY
 import com.example.moreoverlays.utils.MAIN_OVERLAY
+import com.example.moreoverlays.utils.NOTHING
+import com.example.moreoverlays.utils.RIGHT_SIDE
 import com.example.moreoverlays.utils.RIGHT_SWIPE_OVERLAY
 import com.example.moreoverlays.utils.UP_SWIPE_LEFT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.UP_SWIPE_RIGHT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.getInstalledApps
+import com.example.moreoverlays.utils.createAppData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.properties.Delegates
+
 
 class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getInstance(application)
@@ -41,6 +44,9 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
 
     private val _installedApps = MutableStateFlow<List<AppData>>(emptyList())
     val installedApps : StateFlow<List<AppData>> = _installedApps
+
+    private val _americaInstalledApps = MutableStateFlow<List<America>>(emptyList())
+    val americaInstalledApps : StateFlow<List<America>> = _americaInstalledApps
 
     private val _overlayConfigs = MutableStateFlow<List<OverlayConfig>>(emptyList())
     val overlayConfigs: StateFlow<List<OverlayConfig>> = _overlayConfigs
@@ -59,7 +65,11 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
             val isFirstLaunch = sharedPrefs.getBoolean("isFirstLaunch", true)
             val allInstalledApps = getInstalledApps(getApplication())
 
+            val americaList = createAppData(allInstalledApps, getApplication())
+
             _installedApps.value = allInstalledApps
+            _americaInstalledApps.value = americaList
+
 
             if (isFirstLaunch) {
                 val defaultOverlays = createDefaultOverlays()
@@ -83,25 +93,18 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+
+
     private fun createDefaultOverlays() : List<OverlayConfig> {
         return listOf(
-            OverlayConfig(
-                CATCHER_OVERLAY, "",
-                WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT, 0, 0, mutableListOf()),
-            OverlayConfig(MAIN_OVERLAY, "",40, 500, 0, 100, mutableListOf()),
-            OverlayConfig(DOWN_SWIPE_RIGHT_SIDE_OVERLAY, "Right Down Swipe Overlay", 40, 500, 0, 100, mutableListOf()),
-            OverlayConfig(
-                LEFT_SWIPE_OVERLAY, "Left Swipe Overlay",500, 500, 100, 500, mutableListOf(
-                    Apps(1, mutableListOf(), "", "Apps")
-                )),
-            OverlayConfig(
-                UP_SWIPE_RIGHT_SIDE_OVERLAY, "Right Up Swipe Overlay", 40, 500, 0, 100, mutableListOf(
-                Apps(1, mutableListOf(), "", "Apps")
-            )
-            ),
-            OverlayConfig(DOWN_SWIPE_LEFT_SIDE_OVERLAY, "Left Down Swipe Overlay",40, 500, 0, 100, mutableListOf()),
-            OverlayConfig(RIGHT_SWIPE_OVERLAY, "Right Swipe Overlay",40, 500, 0, 100, mutableListOf()),
-            OverlayConfig(UP_SWIPE_LEFT_SIDE_OVERLAY, "Left Up Swipe Overlay",40, 500, 0, 100, mutableListOf()),
+            OverlayConfig(CATCHER_OVERLAY, "", WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT, 0, 0, mutableListOf(), NOTHING),
+            OverlayConfig(MAIN_OVERLAY, "",40, 350, 0, 1000, mutableListOf(), NOTHING),
+            OverlayConfig(DOWN_SWIPE_RIGHT_SIDE_OVERLAY, "Right Down Swipe Overlay", 40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
+            OverlayConfig(LEFT_SWIPE_OVERLAY, "Left Swipe Overlay",500, 500, 100, 500, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
+            OverlayConfig(UP_SWIPE_RIGHT_SIDE_OVERLAY, "Right Up Swipe Overlay", 40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
+            OverlayConfig(DOWN_SWIPE_LEFT_SIDE_OVERLAY, "Left Down Swipe Overlay",40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
+            OverlayConfig(RIGHT_SWIPE_OVERLAY, "Right Swipe Overlay",40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
+            OverlayConfig(UP_SWIPE_LEFT_SIDE_OVERLAY, "Left Up Swipe Overlay",40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
         )
     }
 
@@ -185,6 +188,32 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
                     configsRepository.update(updatedConfig)
                 }
             }
+        }
+    }
+
+    fun updateOverlayApps(overlayConfig: OverlayConfig, appToToggle: AppData, shouldAdd: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+
+            val updatedContentTypes = overlayConfig.contentTypes.map { contentType ->
+                if (contentType is Apps) {
+                    val currentApps = contentType.apps.toMutableList()
+
+                    if (shouldAdd) {
+                        if (!currentApps.any { it.appPackage == appToToggle.appPackage }) {
+                            currentApps.add(appToToggle)
+                        }
+                    } else {
+                        currentApps.removeAll { it.appPackage == appToToggle.appPackage }
+                    }
+                    contentType.copy(apps = currentApps)
+                } else {
+                    contentType
+                }
+            }
+
+            val newConfig = overlayConfig.copy(contentTypes = updatedContentTypes)
+
+            configsRepository.update(newConfig)
         }
     }
 }

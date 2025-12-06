@@ -6,55 +6,101 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".fragments.ViewSettingsFragment">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/bar"
+
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="75dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:cardCornerRadius="16dp"
+            style="?attr/materialCardViewFilledStyle">
 
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
-            android:scaleX="0.5"
-            android:scaleY="0.5"
-            android:src="@drawable/ic_return_foreground"
-            android:layout_gravity="end"
-            android:layout_marginBottom="20dp"
-            android:layout_marginStart="350dp"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            />
+                <com.google.android.material.textview.MaterialTextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Choose Apps"
+                    style="?attr/textAppearanceTitleMedium"
+                    android:layout_marginBottom="12dp"/>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/allAppsRV"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                    app:spanCount="4" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+<!--        <com.google.android.material.button.MaterialButton-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="Done"-->
+<!--            android:layout_marginTop="16dp"/>-->
+
+    </LinearLayout>
+
+<!--    <com.google.android.material.appbar.AppBarLayout-->
+<!--        android:id="@+id/bar"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="75dp"-->
+<!--        app:layout_constraintTop_toTopOf="parent">-->
+
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"/>-->
+
+<!--        <ImageButton-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:background="@android:color/transparent"-->
+<!--            android:scaleX="0.5"-->
+<!--            android:scaleY="0.5"-->
+<!--            android:src="@drawable/ic_return_foreground"-->
+<!--            android:layout_gravity="end"-->
+<!--            android:layout_marginBottom="20dp"-->
+<!--            android:layout_marginStart="350dp"-->
+
+<!--            />-->
 
 
-    </com.google.android.material.appbar.AppBarLayout>
+<!--    </com.google.android.material.appbar.AppBarLayout>-->
 
-    <View
-        android:id="@+id/preset"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+<!--    <androidx.recyclerview.widget.RecyclerView-->
+<!--        android:id="@+id/selectedAppsRV"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="200dp"-->
+<!--        android:layout_marginTop="10dp"-->
+<!--        app:layout_constraintTop_toTopOf="parent"-->
+<!--        app:layout_constraintBottom_toTopOf="@id/allAppsRV"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        />-->
 
-        app:layout_constraintBottom_toTopOf="@id/recyclerView"
-        app:layout_constraintTop_toBottomOf="@id/bar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        />
+<!--    <androidx.recyclerview.widget.RecyclerView-->
+<!--        android:id="@+id/allAppsRV"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/preset"
-        app:layout_constraintBottom_toTopOf="@id/save_btn"
-        app:layout_constraintEnd_toEndOf="parent"
-        />
-
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@id/selectedAppsRV"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        />-->
+<!--
     <com.google.android.material.button.MaterialButton
         android:id="@+id/save_btn"
         android:layout_width="match_parent"
@@ -62,5 +108,5 @@
         android:text="PRESS ME"
 
         app:layout_constraintBottom_toBottomOf="parent"/>
-
+-->
 </androidx.constraintlayout.widget.ConstraintLayout>

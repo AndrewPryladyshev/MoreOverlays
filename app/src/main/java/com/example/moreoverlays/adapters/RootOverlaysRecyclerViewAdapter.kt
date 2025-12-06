@@ -10,7 +10,7 @@ import com.example.moreoverlays.database.OverlayConfig
 
 
 class RootOverlaysRecyclerViewAdapter(
-    private var itemsList: ArrayList<OverlayConfig>,
+    private var itemsList: List<OverlayConfig>,
     private val listener: OnItemClickListener) : RecyclerView.Adapter<RootOverlaysRecyclerViewAdapter.MainOverlaysViewHolder>() {
 
 
@@ -40,5 +40,10 @@ class RootOverlaysRecyclerViewAdapter(
         holder.bind(currentItem)
         holder.textView.text = currentItem.name
 
+    }
+
+    fun updateList(newList: List<OverlayConfig>) {
+        this.itemsList = newList
+        notifyDataSetChanged()
     }
 }

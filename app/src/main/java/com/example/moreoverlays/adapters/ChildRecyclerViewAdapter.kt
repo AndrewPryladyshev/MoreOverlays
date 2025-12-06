@@ -1,5 +1,6 @@
 package com.example.moreoverlays.adapters
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,6 +9,7 @@ import android.widget.TextView
 import androidx.compose.animation.core.updateTransition
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
+import com.example.moreoverlays.America
 import com.example.moreoverlays.Apps
 import com.example.moreoverlays.Notes
 import com.example.moreoverlays.R
@@ -20,17 +22,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class ChildRecyclerViewAdapter(private val itemList: List<AppData>,
-                               private val appsDao: AppsDao,
-                               private val overlayConfig: OverlayConfig,
+class ChildRecyclerViewAdapter(private val itemList: MutableList<America>,
+//                               private val appsDao: AppsDao,
+//                               private var overlayConfig: OverlayConfig,
+                               private val onItemClicked: (AppData) -> Unit,
+                               private var isSelectionMode: Boolean,
 
-) : RecyclerView.Adapter<ChildRecyclerViewAdapter.ChildViewHolder>() {
-    var selectedApps = mutableListOf<AppData>()
+                               ) : RecyclerView.Adapter<ChildRecyclerViewAdapter.ChildViewHolder>() {
 
     class ChildViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val image: ImageView = itemView.findViewById(R.id.icon)
-        val text: TextView = itemView.findViewById(R.id.name)
-        val checkImage: ImageView = itemView.findViewById(R.id.ckeck)
+        val image: ImageView = itemView.findViewById(R.id.iv_app_icon)
+        val text: TextView = itemView.findViewById(R.id.tv_app_name)
+        val checkImage: ImageView = itemView.findViewById(R.id.iv_selected_check)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChildViewHolder {
@@ -42,56 +45,16 @@ class ChildRecyclerViewAdapter(private val itemList: List<AppData>,
         val currentItem = itemList[position]
 
         holder.text.text = currentItem.appName
-        holder.image.setImageDrawable(holder.image.context.packageManager.getApplicationIcon(currentItem.appPackage))
+
+
+        val icon = currentItem.icon
+        holder.image.setImageBitmap(icon)
 
         holder.itemView.setOnClickListener {
+            val currentItemInAppData: AppData = AppData(currentItem.packageName, currentItem.appName)
 
-            when (holder.checkImage.visibility) {
-                View.GONE -> {
-                    holder.checkImage.visibility = View.VISIBLE
-                    currentItem.isSelected = true
-                    CoroutineScope(Dispatchers.IO).launch {
-                        appsDao.updateApps(listOf(currentItem))
-                        val db = AppDatabase.getInstance(holder.itemView.context)
-                        val overlayDao = db.daoOverlayConfigs()
-                        val contentTypesList = overlayConfig.contentTypes
-                        contentTypesList.forEach { item ->
-                            when (item) {
-                                is Apps -> {
-                                    item.apps.add(currentItem)
-                                }
-
-                                is Notes -> TODO()
-                                is Widgets -> TODO()
-                            }
-                        }
-                    }
-                }
-                View.VISIBLE -> {
-                    holder.checkImage.visibility = View.GONE
-                    currentItem.isSelected = false
-                    CoroutineScope(Dispatchers.IO).launch {
-                        appsDao.updateApps(listOf(currentItem))
-                        val db = AppDatabase.getInstance(holder.itemView.context)
-                        val overlayDao = db.daoOverlayConfigs()
-                        val contentTypesList = overlayConfig.contentTypes
-                        contentTypesList.forEach { item ->
-                            when (item) {
-                                is Apps -> {
-                                    item.apps.remove(currentItem)
-                                }
-
-                                is Notes -> TODO()
-                                is Widgets -> TODO()
-                            }
-                        }
-                    }
-                }
-                View.INVISIBLE -> {}
-            }
-
+            onItemClicked(currentItemInAppData)
         }
-
     }
 
     override fun getItemCount(): Int = itemList.size

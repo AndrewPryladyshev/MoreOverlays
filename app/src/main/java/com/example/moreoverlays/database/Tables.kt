@@ -43,6 +43,7 @@ data class OverlayConfig(
     val x: Int,
     val y: Int,
     var contentTypes: List<ContentTypeData>,
+    var side: Int,
 //    var currentItemId: Int,
 ) : Parcelable
 {

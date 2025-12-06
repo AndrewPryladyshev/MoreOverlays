@@ -14,6 +14,10 @@ sealed class ContentTypeData : Parcelable {
     abstract val id: Int
     abstract val title: String
     abstract val contentType: String
+
+    fun getId() {
+        return
+    }
 }
 
 @Parcelize

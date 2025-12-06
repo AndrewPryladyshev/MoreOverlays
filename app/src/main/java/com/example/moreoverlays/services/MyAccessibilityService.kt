@@ -16,17 +16,23 @@ import android.graphics.Color
 import android.os.Build
 import android.view.ViewGroup
 import android.view.Window
+import android.view.WindowManager.LayoutParams
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.room.Dao
 import androidx.room.Database
+import com.example.moreoverlays.Apps
+import com.example.moreoverlays.Notes
+import com.example.moreoverlays.Widgets
 import com.example.moreoverlays.database.AppData
 import com.example.moreoverlays.database.AppDatabase
+import com.example.moreoverlays.database.ConfigsRepository
 import com.example.moreoverlays.database.OverlayConfig
 import com.example.moreoverlays.utils.CATCHER_OVERLAY
 import com.example.moreoverlays.utils.LEFT_SWIPE_OVERLAY
 import com.example.moreoverlays.utils.MAIN_OVERLAY
+import com.example.moreoverlays.utils.UP_SWIPE_RIGHT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.getInstalledApps
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -42,43 +48,53 @@ class MyAccessibilityService : AccessibilityService() {
     private var startX = 0f
     private var startY = 0f
     private var isActive: Boolean = false
-    private var overlayList = arrayListOf<OverlayConfig>()
+    private var overlayList: List<OverlayConfig> = emptyList()
     private val overlayViewsMap = mutableMapOf<Int, View>()
     private var appsList = listOf<AppData>()
     private lateinit var selectedApps: MutableList<AppData>
     private lateinit var db: AppDatabase
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
+    private lateinit var configsRepository: ConfigsRepository
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-        val sharedPrefs = getSharedPreferences("global_prefs", Context.MODE_PRIVATE)
-        val json = sharedPrefs.getString("overlay_list", null)
+//        val sharedPrefs = getSharedPreferences("global_prefs", Context.MODE_PRIVATE)
+//        val json = sharedPrefs.getString("overlay_list", null)
         //selectedApps = sharedPrefs.getStringSet("selectedApps", null)?.toMutableSet() ?: mutableSetOf()
         //Log.i("SelectedApps: ", "$selectedApps")
         // appsList = getInstalledApps(this)
 
-        serviceScope.launch {
-            val appsDao = AppDatabase.getInstance(applicationContext).daoApps()
+        db = AppDatabase.getInstance(applicationContext)
+        configsRepository = ConfigsRepository(db.daoOverlayConfigs())
 
-            selectedApps = appsDao.getSelectedApps()
-            launch(Dispatchers.Main) {
-                val appsView = createAppsView(this@MyAccessibilityService, selectedApps)
-                setOverlayContent(LEFT_SWIPE_OVERLAY, appsView)
+//        serviceScope.launch {
+//            selectedApps = configsRepository.getAll()
+//            launch(Dispatchers.Main) {
+//                val appsView = createAppsView(this@MyAccessibilityService, selectedApps)
+//                setOverlayContent(LEFT_SWIPE_OVERLAY, appsView)
+//            }
+//        }
+        serviceScope.launch(Dispatchers.IO) {
+            val overlaysFlow = configsRepository.getAll()
+
+            overlaysFlow.collect { newOverlayList ->
+
+                overlayList = newOverlayList
+
+                launch(Dispatchers.Main) {
+                    if (overlayList.isNotEmpty()) {
+                        createAllOverlays()
+
+                        showOverlayById(MAIN_OVERLAY)
+
+                    } else {
+                        show("No overlay data found in Database")
+                    }
+                }
             }
-        }
-
-        if (json != null) {
-            val jsonParser = Json { ignoreUnknownKeys = true }
-            overlayList = jsonParser.decodeFromString<ArrayList<OverlayConfig>>(json)
-            createAllOverlays()
-            showOverlayById(MAIN_OVERLAY)
-
-
-        } else {
-            show("No overlay data found")
         }
     }
 
@@ -142,17 +158,31 @@ class MyAccessibilityService : AccessibilityService() {
         when {
             angle in -22.5..22.5 -> {
                 show("→ Right Swipe")
+//                hideOverlayById(MAIN_OVERLAY)
+//                displayOverlayContent(LEFT_SWIPE_OVERLAY)
+//                showOverlayById(UP_SWIPE_RIGHT_SIDE_OVERLAY)
+//                showOverlayById(CATCHER_OVERLAY)
+//                overlayViewsMap[CATCHER_OVERLAY]?.setBackgroundColor(Color.TRANSPARENT)
+//                isActive = true
+
             }
             angle in 112.5..157.5 -> {
                 show("↘ Left Down Swipe")
             }
             angle in -157.5..-112.5 -> {
                 show("↖ Left Up Swipe")
+                hideOverlayById(MAIN_OVERLAY)
+                displayOverlayContent(UP_SWIPE_RIGHT_SIDE_OVERLAY)
+                showOverlayById(UP_SWIPE_RIGHT_SIDE_OVERLAY)
+                showOverlayById(CATCHER_OVERLAY)
+                overlayViewsMap[CATCHER_OVERLAY]?.setBackgroundColor(Color.TRANSPARENT)
+                isActive = true
             }
             // LEFT SWIPE
             angle > 157.5 || angle < -157.5 -> {
                 show("← Left Swipe")
                 hideOverlayById(MAIN_OVERLAY)
+                displayOverlayContent(LEFT_SWIPE_OVERLAY)
                 showOverlayById(LEFT_SWIPE_OVERLAY)
                 showOverlayById(CATCHER_OVERLAY)
                 overlayViewsMap[CATCHER_OVERLAY]?.setBackgroundColor(Color.TRANSPARENT)
@@ -175,6 +205,15 @@ class MyAccessibilityService : AccessibilityService() {
 
     // GET LIST WITH OVERLAYS PARAMS FROM OTHER ACTIVITY AND CREATE OVERLAYS FOR EACH ONE
     private fun createAllOverlays() {
+
+        overlayViewsMap.values.forEach { view ->
+            try {
+                windowManager.removeView(view)
+            } catch (e: Exception) {
+                Log.e("Service", "Error removing view: ${e.message}")
+            }
+        }
+        overlayViewsMap.clear()
 
         overlayList.forEach { item ->
             val overlayView = item.createOverlay(this)
@@ -242,7 +281,7 @@ class MyAccessibilityService : AccessibilityService() {
 
         val layout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.WHITE)
+            setBackgroundColor(Color.TRANSPARENT)
             setPadding(32, 32, 32, 32)
         }
 
@@ -251,11 +290,14 @@ class MyAccessibilityService : AccessibilityService() {
                 setImageDrawable(context.packageManager.getApplicationIcon(app.appPackage))
                 layoutParams = LinearLayout.LayoutParams(150, 150).apply {
                     //marginEnd = 16
+                    setBackgroundColor(Color.TRANSPARENT)
                 }
                 setOnClickListener {
                     val intent = context.packageManager.getLaunchIntentForPackage(app.appPackage)
                     intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
+                    hideOverlaysExcept(MAIN_OVERLAY)
+                    showOverlayById(MAIN_OVERLAY)
                 }
             }
             layout.addView(icon)
@@ -264,7 +306,6 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     // set new content on overlay
-    // TODO: REWORK THIS FUNCTION FOR RUNTIME VIEWS CHANGING
     private fun setOverlayContent(overlayId: Int, newContent: View) {
         val container = overlayViewsMap[overlayId] as? ViewGroup ?: return
         val catcherOverlay = overlayViewsMap[CATCHER_OVERLAY] as? ViewGroup ?: return
@@ -272,9 +313,42 @@ class MyAccessibilityService : AccessibilityService() {
         container.addView(newContent)
     }
 
+    private fun displayOverlayContent(overlayId: Int) {
+        val config = overlayList.find { it.id == overlayId }
+        if (config == null) {
+            Log.e("Service", "Config not found for overlay ID: $overlayId")
+            return
+        }
+
+        val rootLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            LayoutParams.WRAP_CONTENT
+            LayoutParams.WRAP_CONTENT
+            setBackgroundColor(Color.TRANSPARENT)
+        }
+
+        config.contentTypes.forEach { item ->
+            when (item) {
+                is Apps -> {
+                    val appsView = createAppsView(this, item.apps)
+                    rootLayout.addView(appsView)
+                }
+                is Notes -> {
+
+                }
+                is Widgets -> {
+
+                }
+
+            }
+        }
+
+        setOverlayContent(overlayId, rootLayout)
+    }
+
     private fun showOverlayById(id: Int) {
         overlayViewsMap[id]?.visibility = View.VISIBLE
-        overlayViewsMap[id]?.setBackgroundColor(Color.WHITE)
+        overlayViewsMap[id]?.setBackgroundColor(Color.DKGRAY)
     }
 
 

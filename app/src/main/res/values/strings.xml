@@ -5,4 +5,7 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="btn">btn</string>
+    <string name="service_status">Service Status</string>
+    <string name="enable_right_gesture">Enable Right Gesture</string>
+    <string name="panel_content">Panel Content</string>
 </resources>

@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.MoreOverlays" parent="Theme.Material3.DayNight.NoActionBar"/>
+    <style name="Theme.MoreOverlays1" parent="Theme.Material3.DayNight.NoActionBar"/>
+
+    <style name="Theme.MoreOverlays" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#6750A4</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#EADDFF</item>
+        <item name="colorOnPrimaryContainer">#21005D</item>
+        <item name="colorSecondary">#625B71</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSurface">#FFFBFE</item>
+        <item name="colorOnSurface">#1C1B1F</item>
+        <item name="colorSurfaceContainerHigh">#E7E0EC</item>
+        <item name="colorSurfaceContainerLow">#F0F0F0</item> </style>
 
 </resources>

@@ -8,6 +8,8 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.net.Uri
+import androidx.core.graphics.drawable.toBitmap
+import com.example.moreoverlays.America
 import com.example.moreoverlays.database.AppData
 
 
@@ -20,11 +22,15 @@ const val DOWN_SWIPE_LEFT_SIDE_OVERLAY = 4
 const val RIGHT_SWIPE_OVERLAY = 5
 const val UP_SWIPE_LEFT_SIDE_OVERLAY = 6
 
+const val NOTHING = 0
+const val RIGHT_SIDE = 1
+const val LEFT_SIDE = 2
 
 const val CONTENT_APPS = 1
 const val CONTENT_WIDGETS = 2
 const val CONTENT_PHOTOS = 3
 const val CONTENT_NOTES = 4
+
 
 
 fun getInstalledApps(context: Context): List<AppData> {
@@ -48,6 +54,16 @@ fun Context.dpToPx(dp: Int): Int {
         dp.toFloat(),
         resources.displayMetrics
     ).toInt()
+}
+
+
+fun createAppData(list: List<AppData>, context: Context) : MutableList<America> {
+    val americaList = mutableListOf<America>()
+    list.forEach { item ->
+        val america: America = America(item.appPackage, item.appName, context.packageManager.getApplicationIcon(item.appPackage).toBitmap())
+        americaList.add(america)
+    }
+    return americaList
 }
 
 
