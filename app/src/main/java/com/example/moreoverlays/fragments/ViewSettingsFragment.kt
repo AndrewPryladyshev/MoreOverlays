@@ -38,9 +38,11 @@ class ViewSettingsFragment : Fragment(R.layout.fragment_view_settings) {
     private var _binding: FragmentViewSettingsBinding? = null
     private val binding get() = _binding!!
 
+    private lateinit var appsAdapter: AppsListAdapter
+
 
     private var allInstalledApps: List<America> = emptyList()
-    private var currentOverlay: OverlayConfig? = null
+    private lateinit var currentOverlay: OverlayConfig
 
 
     override fun onCreateView(
@@ -70,6 +72,13 @@ class ViewSettingsFragment : Fragment(R.layout.fragment_view_settings) {
         if (contentTypeId == null || overlayConfigId == null) return
 
         allAppsRecyclerView.layoutManager = GridLayoutManager(requireContext(), 4)
+        allAppsRecyclerView.setHasFixedSize(true)
+
+
+        appsAdapter = AppsListAdapter(onItemClicked = {returnedShouldAdd, appToAdd ->
+            viewModel.updateOverlayApps(currentOverlay, appToAdd, returnedShouldAdd)
+        })
+        allAppsRecyclerView.adapter = appsAdapter
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -79,14 +88,12 @@ class ViewSettingsFragment : Fragment(R.layout.fragment_view_settings) {
                     .collectLatest { (appsList, configs) ->
                         allInstalledApps = appsList
 
+
+
                         val foundOverlay = configs.find { it.id == overlayConfigId }
                         if (foundOverlay != null) {
                             currentOverlay = foundOverlay
                             updateRecyclerViews(contentTypeId, foundOverlay)
-                        } else {
-                            allAppsRecyclerView.adapter = ChildRecyclerViewAdapter(
-                                mutableListOf(), isSelectionMode = false, onItemClicked = {}
-                            )
                         }
                     }
             }
@@ -126,17 +133,13 @@ class ViewSettingsFragment : Fragment(R.layout.fragment_view_settings) {
 //                }
 //            )
 
-            val adapter = AppsListAdapter(true, selectedApps.toMutableList(), onItemClicked = {returnedShouldAdd, appToAdd ->
-                viewModel.updateOverlayApps(overlay, appToAdd, returnedShouldAdd)
-            })
-            adapter.submitList(allInstalledApps)
-            allAppsRecyclerView.adapter = adapter
-            allAppsRecyclerView.setHasFixedSize(true)
+//            val adapter = AppsListAdapter(onItemClicked = {returnedShouldAdd, appToAdd ->
+//                viewModel.updateOverlayApps(overlay, appToAdd, returnedShouldAdd)
+//            })
+            appsAdapter.alreadyAddedApps = selectedApps.toMutableList()
+            appsAdapter.isClickable = true
+            appsAdapter.submitList(allInstalledApps)
 
-        } else {
-
-//            selectedAppsRecyclerView.adapter = ChildRecyclerViewAdapter(mutableListOf(), isSelectionMode = true, onItemClicked = {})
-            allAppsRecyclerView.adapter = ChildRecyclerViewAdapter(mutableListOf(), isSelectionMode = false, onItemClicked = {})
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.moreoverlays.adapters
 
 import android.text.BoringLayout
+import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,14 +14,20 @@ import com.example.moreoverlays.R
 import com.example.moreoverlays.database.AppData
 import com.example.moreoverlays.utils.AppsDiffCallback
 
-class AppsListAdapter(private var isClickable: Boolean,
-                      private val alreadyAddedApps: MutableList<America>,
-                      private val onItemClicked: (Boolean, AppData) -> Unit,
+class AppsListAdapter(private val onItemClicked: (Boolean, AppData) -> Unit, ) : ListAdapter<America, AppsListAdapter.AppsViewHolder>(AppsDiffCallback()) {
 
-) : ListAdapter<America, AppsListAdapter.AppsViewHolder>(AppsDiffCallback()) {
+    var isClickable: Boolean = false
+    var alreadyAddedApps: MutableList<America> = mutableListOf()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) : AppsViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.apps_item, parent, false)
+        val themedContext = ContextThemeWrapper(
+            parent.context,
+            R.style.Theme_MoreOverlays
+        )
+
+        val view = LayoutInflater.from(themedContext)
+            .inflate(R.layout.apps_item, parent, false)
+
         return AppsViewHolder(view)
     }
 
@@ -39,30 +46,53 @@ class AppsListAdapter(private var isClickable: Boolean,
 
         val isAdded = alreadyAddedApps.any { it.packageName == currentItem.packageName }
 
-        if (isAdded) {
-            holder.itemView.setBackgroundColor(holder.itemView.context.getColor(R.color.purple_500))
-        } else {
-            holder.itemView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-        }
+        holder.itemView.isSelected = isAdded
+        holder.itemView.setBackgroundResource(R.drawable.test_background)
 
-        holder.itemView.setOnClickListener {
+//        if (isAdded) {
+//            holder.itemView.setBackgroundResource(R.drawable.test_background)
+//        } else {
+//            holder.itemView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+//        }
 
-            val currentItemInAppData: AppData = AppData(currentItem.packageName, currentItem.appName)
-            var shouldAdd: Boolean = true
-            val isAlreadyAdded = alreadyAddedApps.any { it.packageName == currentItem.packageName }
+        val currentItemInAppData = AppData(currentItem.packageName, currentItem.appName)
 
-            if (isAlreadyAdded) {
-                alreadyAddedApps.removeIf { it.packageName == currentItem.packageName }
-                holder.itemView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                onItemClicked(false, currentItemInAppData)
 
-            } else {
-                alreadyAddedApps.add(currentItem)
-                holder.itemView.setBackgroundColor(holder.itemView.context.getColor(R.color.purple_500))
-                onItemClicked(true, currentItemInAppData)
+        if (holder.itemView.isClickable) {
+
+            holder.itemView.setOnClickListener {
+
+//                val currentItemInAppData: AppData = AppData(currentItem.packageName, currentItem.appName)
+//
+//                if (isAdded) {
+//                    alreadyAddedApps.removeIf { it.packageName == currentItem.packageName }
+//                    holder.itemView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+//                    onItemClicked(false, currentItemInAppData)
+//
+//                } else {
+//                    alreadyAddedApps.add(currentItem)
+//                    holder.itemView.setBackgroundResource(R.drawable.test_background)
+//                    onItemClicked(true, currentItemInAppData)
+//
+//                }
+
+
+
+                val currentlyAdded = alreadyAddedApps.any { it.packageName == currentItem.packageName }
+
+                if (currentlyAdded) {
+                    alreadyAddedApps.removeIf { it.packageName == currentItem.packageName }
+                    holder.itemView.isSelected = false
+                    onItemClicked(false, currentItemInAppData)
+                } else {
+                    alreadyAddedApps.add(currentItem)
+                    holder.itemView.isSelected = true
+                    onItemClicked(true, currentItemInAppData)
+                }
+
+//                notifyItemChanged(position)
 
             }
-
         }
 
     }

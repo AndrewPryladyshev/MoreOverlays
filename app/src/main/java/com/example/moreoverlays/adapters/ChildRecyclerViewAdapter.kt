@@ -33,7 +33,6 @@ class ChildRecyclerViewAdapter(private val itemList: MutableList<America>,
     class ChildViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val image: ImageView = itemView.findViewById(R.id.iv_app_icon)
         val text: TextView = itemView.findViewById(R.id.tv_app_name)
-        val checkImage: ImageView = itemView.findViewById(R.id.iv_selected_check)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChildViewHolder {

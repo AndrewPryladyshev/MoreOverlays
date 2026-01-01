@@ -20,7 +20,8 @@ import com.example.moreoverlays.utils.DOWN_SWIPE_LEFT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.DOWN_SWIPE_RIGHT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.LEFT_SIDE
 import com.example.moreoverlays.utils.LEFT_SWIPE_OVERLAY
-import com.example.moreoverlays.utils.MAIN_OVERLAY
+import com.example.moreoverlays.utils.MAIN_OVERLAY_LEFT
+import com.example.moreoverlays.utils.MAIN_OVERLAY_RIGHT
 import com.example.moreoverlays.utils.NOTHING
 import com.example.moreoverlays.utils.RIGHT_SIDE
 import com.example.moreoverlays.utils.RIGHT_SWIPE_OVERLAY
@@ -98,8 +99,9 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     private fun createDefaultOverlays() : List<OverlayConfig> {
         return listOf(
             OverlayConfig(CATCHER_OVERLAY, "", WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT, 0, 0, mutableListOf(), NOTHING),
-            OverlayConfig(MAIN_OVERLAY, "",40, 350, 0, 1000, mutableListOf(), NOTHING),
-            OverlayConfig(DOWN_SWIPE_RIGHT_SIDE_OVERLAY, "Right Down Swipe Overlay", 40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
+            OverlayConfig(MAIN_OVERLAY_RIGHT, "",40, 350, 0, 1000, mutableListOf(), NOTHING),
+            OverlayConfig(MAIN_OVERLAY_LEFT, "",40, 350, 0, 1000, mutableListOf(), NOTHING),
+            OverlayConfig(DOWN_SWIPE_RIGHT_SIDE_OVERLAY, "Right Down Swipe Overlay", 40, 500, 0, 0, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
             OverlayConfig(LEFT_SWIPE_OVERLAY, "Left Swipe Overlay",500, 500, 100, 500, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
             OverlayConfig(UP_SWIPE_RIGHT_SIDE_OVERLAY, "Right Up Swipe Overlay", 40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
             OverlayConfig(DOWN_SWIPE_LEFT_SIDE_OVERLAY, "Left Down Swipe Overlay",40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
@@ -128,7 +130,6 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
                         is Apps -> it.id
                         is Notes -> it.id
                         is Widgets -> it.id
-                        else -> 0
                     }
                 } ?: 0
 
@@ -214,6 +215,12 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
             val newConfig = overlayConfig.copy(contentTypes = updatedContentTypes)
 
             configsRepository.update(newConfig)
+        }
+    }
+
+    suspend fun updateOverlayVisibility(configId: Int, isEnabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            configsRepository.updateVisibilityById(configId, isEnabled)
         }
     }
 }

@@ -24,6 +24,9 @@ import com.example.moreoverlays.databinding.HandleSettingsFragmentBinding
 import com.example.moreoverlays.utils.DOWN_SWIPE_LEFT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.DOWN_SWIPE_RIGHT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.LEFT_SWIPE_OVERLAY
+import com.example.moreoverlays.utils.MAIN_OVERLAY_LEFT
+import com.example.moreoverlays.utils.MAIN_OVERLAY_RIGHT
+import com.example.moreoverlays.utils.RIGHT_SIDE
 import com.example.moreoverlays.utils.RIGHT_SWIPE_OVERLAY
 import com.example.moreoverlays.utils.UP_SWIPE_LEFT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.UP_SWIPE_RIGHT_SIDE_OVERLAY
@@ -54,6 +57,10 @@ class HandleSettingsFragment : Fragment(R.layout.handle_settings_fragment) {
     private var diagonalUpOverlayId: Int? = null
     private var diagonalUpContentTypeId: Int? = null
 
+    private val diagonalDownAdapter = AppsListAdapter(onItemClicked = { _, _ ->})
+    private val straightSwipeAdapter = AppsListAdapter(onItemClicked = { _, _ ->})
+    private val diagonalUpAdapter = AppsListAdapter(onItemClicked = { _, _ ->})
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -73,6 +80,24 @@ class HandleSettingsFragment : Fragment(R.layout.handle_settings_fragment) {
         super.onViewCreated(view, savedInstanceState)
 
         side = arguments?.getInt("side") ?: 0
+        val materialSwitch = binding.switchMasterToggle
+
+
+
+        binding.RVDiagonalDownSwipe.adapter = diagonalDownAdapter
+        binding.RVStraightSwipe.adapter = straightSwipeAdapter
+        binding.RVDiagonalUpSwipe.adapter = diagonalUpAdapter
+
+        binding.RVDiagonalDownSwipe.isNestedScrollingEnabled = false
+        binding.RVStraightSwipe.isNestedScrollingEnabled = false
+        binding.RVDiagonalUpSwipe.isNestedScrollingEnabled = false
+
+        val mainOverlayConfigId = if (side == RIGHT_SIDE) {
+            MAIN_OVERLAY_RIGHT
+        } else {
+            MAIN_OVERLAY_LEFT
+        }
+
 
 //        val appsAdapter = AppsListAdapter()
 //        binding.RVDiagonalUpSwipe.adapter = appsAdapter
@@ -81,51 +106,76 @@ class HandleSettingsFragment : Fragment(R.layout.handle_settings_fragment) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+
                 launch {
                     viewModel.overlayConfigs.collectLatest { list ->
 
+                        Log.d("CONFIG_DIAG", "1. Total configs received: ${list.size}")
+                        Log.d("CONFIG_DIAG", "   Target side value: $side")
+
+                        val mainOverlayConfig = list.find { it.id == mainOverlayConfigId }
+
                         overlayConfigsList = list.filter { it.side == side }
 
-                        diagonalDownOverlayId = null
-                        diagonalDownContentTypeId = null
-                        straightSwipeOverlayId = null
-                        straightSwipeContentTypeId = null
-                        diagonalUpOverlayId = null
-                        diagonalUpContentTypeId = null
-
-                        for (overlayConfig in overlayConfigsList) {
-
-                            var contentTypeId: Int? = null
-                            var appsMutableList: MutableList<AppData> = mutableListOf()
-
-                            for (contentType in overlayConfig.contentTypes) {
-                                if (contentType is Apps) {
-                                    contentTypeId = contentType.id
-                                    appsMutableList = contentType.apps
-                                }
-                            }
-
-                            when (overlayConfig.id) {
-                                DOWN_SWIPE_RIGHT_SIDE_OVERLAY, DOWN_SWIPE_LEFT_SIDE_OVERLAY -> {
-                                    diagonalDownOverlayId = overlayConfig.id
-                                    diagonalDownContentTypeId = contentTypeId
-                                    applyListAdapter(appsMutableList.toList(), overlayConfig.id)
-                                }
-                                LEFT_SWIPE_OVERLAY, RIGHT_SWIPE_OVERLAY -> {
-                                    straightSwipeOverlayId = overlayConfig.id
-                                    straightSwipeContentTypeId = contentTypeId
-                                    applyListAdapter(appsMutableList.toList(), overlayConfig.id)
-                                }
-                                UP_SWIPE_RIGHT_SIDE_OVERLAY, UP_SWIPE_LEFT_SIDE_OVERLAY -> {
-                                    diagonalUpOverlayId = overlayConfig.id
-                                    diagonalUpContentTypeId = contentTypeId
-                                    applyListAdapter(appsMutableList.toList(), overlayConfig.id)
+                        mainOverlayConfig?.let {
+                            materialSwitch.setOnCheckedChangeListener(null)
+                            materialSwitch.isChecked = it.isEnabled
+                            materialSwitch.setOnCheckedChangeListener { _, isChecked ->
+                                viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                                    viewModel.updateOverlayVisibility(mainOverlayConfigId, isChecked)
+                                    Log.d("HANDLE_CHECK_DEBUG", "$isChecked")
                                 }
                             }
                         }
 
-                        setupClickListeners()
 
+//                        diagonalDownOverlayId = null
+//                        diagonalDownContentTypeId = null
+//                        straightSwipeOverlayId = null
+//                        straightSwipeContentTypeId = null
+//                        diagonalUpOverlayId = null
+//                        diagonalUpContentTypeId = null
+
+                        for (overlayConfig in overlayConfigsList) {
+                            Log.d("CONFIG_DEBUG", "Processing ID: ${overlayConfig.id}")
+                            val appsContentType = overlayConfig.contentTypes
+                                .filterIsInstance<Apps>()
+                                .firstOrNull()
+
+                            if (appsContentType == null) {
+                                Log.w("CONFIG_DEBUG", "Overlay ${overlayConfig.id} has NO Apps content.")
+                            }
+
+                            val contentTypeId: Int? = appsContentType?.id
+                            val appsMutableList: List<AppData> =
+                                appsContentType?.apps?.toList() ?: emptyList()
+                            if (contentTypeId != null) {
+                                when (overlayConfig.id) {
+                                    DOWN_SWIPE_RIGHT_SIDE_OVERLAY, DOWN_SWIPE_LEFT_SIDE_OVERLAY -> {
+                                        diagonalDownOverlayId = overlayConfig.id
+                                        diagonalDownContentTypeId = contentTypeId
+                                        applyListAdapter(appsMutableList.toList(), overlayConfig.id)
+                                        Log.d("CONFIG_DEBUG", "DOWN SWIPE IDs set: ${overlayConfig.id}, $contentTypeId. App count: ${appsMutableList.size}")
+                                    }
+
+                                    LEFT_SWIPE_OVERLAY, RIGHT_SWIPE_OVERLAY -> {
+                                        straightSwipeOverlayId = overlayConfig.id
+                                        straightSwipeContentTypeId = contentTypeId
+                                        applyListAdapter(appsMutableList.toList(), overlayConfig.id)
+
+                                    }
+
+                                    UP_SWIPE_RIGHT_SIDE_OVERLAY, UP_SWIPE_LEFT_SIDE_OVERLAY -> {
+                                        diagonalUpOverlayId = overlayConfig.id
+                                        diagonalUpContentTypeId = contentTypeId
+                                        applyListAdapter(appsMutableList.toList(), overlayConfig.id)
+                                        Log.d("CONFIG_DEBUG", "UP SWIPE IDs set: ${overlayConfig.id}, $contentTypeId. App count: ${appsMutableList.size}")
+                                    }
+                                }
+                            }
+                        }
+                        setupClickListeners()
+                        Log.d("CONFIG_DEBUG", "--- setupClickListeners called. ---")
                     }
                 }
 
@@ -139,50 +189,52 @@ class HandleSettingsFragment : Fragment(R.layout.handle_settings_fragment) {
     }
 
     private fun applyListAdapter(itemList: List<AppData>, id: Int) {
-        val adapter = AppsListAdapter(false, mutableListOf<America>(), onItemClicked = { _, _ ->})
         when (id) {
             DOWN_SWIPE_RIGHT_SIDE_OVERLAY, DOWN_SWIPE_LEFT_SIDE_OVERLAY -> {
-                binding.RVDiagonalDownSwipe.adapter = adapter
-                binding.RVDiagonalDownSwipe.isNestedScrollingEnabled = false
-                adapter.submitList(createAppData(itemList, requireContext()))
+                diagonalDownAdapter.submitList(
+                    createAppData(itemList, requireContext())
+                )
             }
             LEFT_SWIPE_OVERLAY, RIGHT_SWIPE_OVERLAY -> {
-                binding.RVStraightSwipe.adapter = adapter
-                binding.RVStraightSwipe.isNestedScrollingEnabled = false
-                adapter.submitList(createAppData(itemList, requireContext()))
+                straightSwipeAdapter.submitList(
+                    createAppData(itemList, requireContext())
+                )
             }
             UP_SWIPE_RIGHT_SIDE_OVERLAY, UP_SWIPE_LEFT_SIDE_OVERLAY -> {
-                binding.RVDiagonalUpSwipe.adapter = adapter
-                binding.RVDiagonalUpSwipe.isNestedScrollingEnabled = false
-                adapter.submitList(createAppData(itemList, requireContext()))
+                diagonalUpAdapter.submitList(
+                    createAppData(itemList, requireContext())
+                )
             }
         }
     }
 
     private fun setupClickListeners() {
-        diagonalDownOverlayId?.let { overlayId ->
-            diagonalDownContentTypeId?.let { contentTypeId ->
-                binding.editDiagonalDownSwipe.setOnClickListener {
-                    (activity as MainActivity).openViewSettingsFragment(overlayId, contentTypeId)
-                }
+        if (diagonalDownOverlayId != null) {
+            Log.d("CLICK_DEBUG", "Setting Down Swipe Listener for OID: $diagonalDownOverlayId")
+            binding.editDiagonalDownSwipe.setOnClickListener {
+                (activity as MainActivity).openViewSettingsFragment(diagonalDownOverlayId!!, diagonalDownContentTypeId!!)
             }
+        } else {
+            Log.e("CLICK_DEBUG", "Down Swipe Listener NOT set. ID is NULL.")
         }
 
-        straightSwipeOverlayId?.let { overlayId ->
-            straightSwipeContentTypeId?.let { contentTypeId ->
-                binding.editStraightSwipe.setOnClickListener {
-                    (activity as MainActivity).openViewSettingsFragment(overlayId, contentTypeId)
-                }
+        if (straightSwipeOverlayId != null) {
+            Log.d("CLICK_DEBUG", "Setting Straight Swipe Listener for OID: $straightSwipeOverlayId")
+            binding.editStraightSwipe.setOnClickListener {
+                (activity as MainActivity).openViewSettingsFragment(straightSwipeOverlayId!!, straightSwipeContentTypeId!!)
             }
+        } else {
+            Log.e("CLICK_DEBUG", "Straight Swipe Listener NOT set. ID is NULL.")
         }
 
-        diagonalUpOverlayId?.let { overlayId ->
-            diagonalUpContentTypeId?.let { contentTypeId ->
-                binding.editDiagonalUpSwipe.setOnClickListener {
-                    (activity as MainActivity).openViewSettingsFragment(overlayId, contentTypeId)
-                }
+        if (diagonalUpOverlayId != null) {
+            Log.d("CLICK_DEBUG", "Setting Up Swipe Listener for OID: $diagonalUpOverlayId")
+            binding.editDiagonalUpSwipe.setOnClickListener {
+                (activity as MainActivity).openViewSettingsFragment(diagonalUpOverlayId!!, diagonalUpContentTypeId!!)
+                Log.d("DEBUG", "$diagonalUpOverlayId, $diagonalUpContentTypeId")
             }
+        } else {
+            Log.e("CLICK_DEBUG", "Up Swipe Listener NOT set. ID is NULL.")
         }
     }
-
 }

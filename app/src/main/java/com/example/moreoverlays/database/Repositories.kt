@@ -14,4 +14,5 @@ class ConfigsRepository(private val dao: OverlayConfigsDao) {
     fun getById(id : Int) : OverlayConfig? = dao.getById(id)
     suspend fun insert(configs: List<OverlayConfig>) = dao.insertAllConfigs(configs)
     suspend fun update(configs: OverlayConfig) = dao.update(listOf(configs))
+    suspend fun updateVisibilityById(configId: Int, isEnabled: Boolean) = dao.updateVisibilityById(configId, isEnabled)
 }

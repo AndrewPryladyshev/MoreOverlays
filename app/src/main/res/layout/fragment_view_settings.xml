@@ -4,46 +4,39 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".fragments.ViewSettingsFragment">
+    tools:context=".fragments.ViewSettingsFragment"
+    android:padding="16dp">
 
 
-
-    <LinearLayout
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="16dp"
-        app:layout_constraintTop_toTopOf="parent">
+        app:cardCornerRadius="16dp"
+        style="?attr/materialCardViewFilledStyle">
 
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:cardCornerRadius="16dp"
-            style="?attr/materialCardViewFilledStyle">
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <LinearLayout
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Choose Apps"
+                style="?attr/textAppearanceTitleMedium"
+                android:layout_marginBottom="12dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/allAppsRV"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:padding="16dp">
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:spanCount="4" />
 
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Choose Apps"
-                    style="?attr/textAppearanceTitleMedium"
-                    android:layout_marginBottom="12dp"/>
+        </LinearLayout>
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/allAppsRV"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                    app:spanCount="4" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
+    </com.google.android.material.card.MaterialCardView>
 
 <!--        <com.google.android.material.button.MaterialButton-->
 <!--            android:layout_width="match_parent"-->
@@ -51,7 +44,7 @@
 <!--            android:text="Done"-->
 <!--            android:layout_marginTop="16dp"/>-->
 
-    </LinearLayout>
+
 
 <!--    <com.google.android.material.appbar.AppBarLayout-->
 <!--        android:id="@+id/bar"-->

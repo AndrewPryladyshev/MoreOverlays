@@ -35,7 +35,7 @@ interface OverlayConfigsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAllConfigs(overlayConfigs: List<OverlayConfig>)
 
-    @Query("SELECT * FROM overlay_configs WHERE id = :id")
+    @Query("""SELECT * FROM overlay_configs WHERE id = :id""")
     fun getById(id: Int): OverlayConfig?
 
     @Update
@@ -46,4 +46,7 @@ interface OverlayConfigsDao {
 
     @Query("""DELETE FROM overlay_configs""")
     suspend fun clear()
+
+    @Query("""UPDATE overlay_configs SET isEnabled = :isEnabled WHERE id = :configId""")
+    suspend fun updateVisibilityById(configId: Int, isEnabled: Boolean)
 }
