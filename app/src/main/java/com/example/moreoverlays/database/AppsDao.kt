@@ -49,4 +49,7 @@ interface OverlayConfigsDao {
 
     @Query("""UPDATE overlay_configs SET isEnabled = :isEnabled WHERE id = :configId""")
     suspend fun updateVisibilityById(configId: Int, isEnabled: Boolean)
+
+    @Query("""UPDATE overlay_configs SET x = :newX, y = :newY WHERE id = :configId""")
+    suspend fun updateCoordinates(configId: Int, newX: Int, newY: Int)
 }

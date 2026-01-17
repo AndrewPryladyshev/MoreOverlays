@@ -33,6 +33,11 @@ const val CONTENT_PHOTOS = 3
 const val CONTENT_NOTES = 4
 
 
+const val MAIN = 1
+const val DIAGONAL_UP = 2
+const val STRAIGHT = 3
+const val DIAGONAL_DOWN = 4
+
 
 fun getInstalledApps(context: Context): List<AppData> {
     val pm = context.packageManager

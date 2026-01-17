@@ -3,12 +3,14 @@ package com.example.moreoverlays.viewModels
 import android.app.Application
 import android.util.Log
 import android.view.WindowManager
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moreoverlays.America
 import com.example.moreoverlays.Apps
 import com.example.moreoverlays.ContentTypeData
 import com.example.moreoverlays.Notes
+import com.example.moreoverlays.OverlayPreviewState
 import com.example.moreoverlays.Widgets
 import com.example.moreoverlays.database.AppData
 import com.example.moreoverlays.database.AppDatabase
@@ -16,23 +18,29 @@ import com.example.moreoverlays.database.AppsRepository
 import com.example.moreoverlays.database.ConfigsRepository
 import com.example.moreoverlays.database.OverlayConfig
 import com.example.moreoverlays.utils.CATCHER_OVERLAY
+import com.example.moreoverlays.utils.DIAGONAL_DOWN
+import com.example.moreoverlays.utils.DIAGONAL_UP
 import com.example.moreoverlays.utils.DOWN_SWIPE_LEFT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.DOWN_SWIPE_RIGHT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.LEFT_SIDE
 import com.example.moreoverlays.utils.LEFT_SWIPE_OVERLAY
+import com.example.moreoverlays.utils.MAIN
 import com.example.moreoverlays.utils.MAIN_OVERLAY_LEFT
 import com.example.moreoverlays.utils.MAIN_OVERLAY_RIGHT
 import com.example.moreoverlays.utils.NOTHING
 import com.example.moreoverlays.utils.RIGHT_SIDE
 import com.example.moreoverlays.utils.RIGHT_SWIPE_OVERLAY
+import com.example.moreoverlays.utils.STRAIGHT
 import com.example.moreoverlays.utils.UP_SWIPE_LEFT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.UP_SWIPE_RIGHT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.getInstalledApps
 import com.example.moreoverlays.utils.createAppData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -49,16 +57,19 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     private val _americaInstalledApps = MutableStateFlow<List<America>>(emptyList())
     val americaInstalledApps : StateFlow<List<America>> = _americaInstalledApps
 
-    private val _overlayConfigs = MutableStateFlow<List<OverlayConfig>>(emptyList())
-    val overlayConfigs: StateFlow<List<OverlayConfig>> = _overlayConfigs
+    private val _previewOverlayStates = MutableStateFlow<List<OverlayPreviewState>>(emptyList())
+    val previewOverlayStates : StateFlow<List<OverlayPreviewState>> = _previewOverlayStates
+
+    val overlayConfigs: StateFlow<List<OverlayConfig>> = configsRepository.getAll()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     init {
         loadData()
-        viewModelScope.launch(Dispatchers.IO) {
-            configsRepository.getAll().collect { configs ->
-                _overlayConfigs.value = configs
-            }
-        }
+
     }
 
     private fun loadData() {
@@ -67,28 +78,24 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
             val allInstalledApps = getInstalledApps(getApplication())
 
             val americaList = createAppData(allInstalledApps, getApplication())
+            val previewList = createDefaultOverlayPreviewStates()
 
             _installedApps.value = allInstalledApps
             _americaInstalledApps.value = americaList
+            _previewOverlayStates.value = previewList
 
 
             if (isFirstLaunch) {
-                val defaultOverlays = createDefaultOverlays()
-
                 try {
+                    val defaultOverlays = createDefaultOverlays()
                     appsRepository.insert(allInstalledApps)
                     configsRepository.insert(defaultOverlays)
 
                     withContext(Dispatchers.Main) {
                         sharedPrefs.edit().putBoolean("isFirstLaunch", false).apply()
                     }
-
-                    configsRepository.getAll().first().forEach {
-                        { Log.d("DBCheck", "Overlay in DB: $it") }
-                    }
-
-                    } catch (e: Exception) {
-                    e.printStackTrace()
+                } catch (e: Exception) {
+                    Log.e("VM_DEBUG", "Error during first launch data seeding", e)
                 }
             }
         }
@@ -109,6 +116,16 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
             OverlayConfig(UP_SWIPE_LEFT_SIDE_OVERLAY, "Left Up Swipe Overlay",40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
         )
     }
+
+    private fun createDefaultOverlayPreviewStates() : List<OverlayPreviewState> {
+        return listOf(
+            OverlayPreviewState(MAIN, "right", listOf(MAIN_OVERLAY_RIGHT, MAIN_OVERLAY_LEFT), 0.5f),
+            OverlayPreviewState(DIAGONAL_UP, "right", listOf(UP_SWIPE_RIGHT_SIDE_OVERLAY, UP_SWIPE_LEFT_SIDE_OVERLAY), 0.5f),
+            OverlayPreviewState(STRAIGHT, "right", listOf(RIGHT_SWIPE_OVERLAY, LEFT_SWIPE_OVERLAY), 0.5f),
+            OverlayPreviewState(DIAGONAL_DOWN, "right", listOf(DOWN_SWIPE_RIGHT_SIDE_OVERLAY, DOWN_SWIPE_LEFT_SIDE_OVERLAY), 0.5f),
+        )
+    }
+
 
     fun updateOverlayConfig(config: OverlayConfig) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -223,4 +240,52 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
             configsRepository.updateVisibilityById(configId, isEnabled)
         }
     }
+
+    fun updatePosition(id: Int, x: Int, y: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                configsRepository.updatePosition(id, x, y)
+            } catch (e: Exception) {
+                Log.e("VM_DEBUG", "Error updating position", e)
+            }
+        }
+    }
+
+    fun updatePreviewSide(previewId: Int, newSide: String) {
+        val updatedList = _previewOverlayStates.value.map { state ->
+            if (state.id == previewId) {
+                state.copy(displayMode = newSide)
+            } else {
+                state
+            }
+        }
+        _previewOverlayStates.value = updatedList
+    }
+
+    fun updatePreviewOpacity(id: Int, opacity: Float) {
+        val updatedList = _previewOverlayStates.value.map { state ->
+            if (state.id == id) {
+                state.copy(opacity = opacity)
+            } else {
+                state
+            }
+        }
+        _previewOverlayStates.value = updatedList
+    }
+
+//    NEW WAY TO CHANGE THEME
+//    fun setTheme(mode: Int) {
+//        // AppCompatDelegate.MODE_NIGHT_NO (1)
+//        // AppCompatDelegate.MODE_NIGHT_YES (2)
+//        // AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM (-1)
+//
+//        AppCompatDelegate.setDefaultNightMode(mode)
+//        sharedPrefs.edit().putInt("prefs_theme_mode", mode).apply()
+//    }
+//
+//    fun getSavedThemeMode(): Int {
+//        return sharedPrefs.getInt("prefs_theme_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+//    }
+
+
 }

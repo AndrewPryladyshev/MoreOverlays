@@ -18,6 +18,7 @@ import com.example.moreoverlays.database.OverlayConfig
 import com.example.moreoverlays.databinding.FragmentMainBinding
 import com.example.moreoverlays.utils.LEFT_SIDE
 import com.example.moreoverlays.utils.RIGHT_SIDE
+import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -31,6 +32,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     private lateinit var overlaysRecyclerView: RecyclerView
     private lateinit var rightHandleCV: CardView
     private lateinit var leftHandleCV: CardView
+    private lateinit var appearanceBtn: MaterialButton
 
     private var _overlayList: List<OverlayConfig> = emptyList()
 
@@ -49,6 +51,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
 
         rightHandleCV = binding.cardRightHandle
         leftHandleCV = binding.cardLeftHandle
+        appearanceBtn = binding.btnAppearance
 
         rightHandleCV.setOnClickListener {
             (activity as? MainActivity)?.openHandleSettingsFragment(RIGHT_SIDE)
@@ -58,6 +61,9 @@ class MainFragment : Fragment(R.layout.fragment_main) {
             (activity as? MainActivity)?.openHandleSettingsFragment(LEFT_SIDE)
         }
 
+        appearanceBtn.setOnClickListener {
+            (activity as? MainActivity)?.openAppearanceSettingsFragment()
+        }
 
 
 

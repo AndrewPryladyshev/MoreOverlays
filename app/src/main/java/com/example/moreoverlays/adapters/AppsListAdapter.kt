@@ -20,12 +20,12 @@ class AppsListAdapter(private val onItemClicked: (Boolean, AppData) -> Unit, ) :
     var alreadyAddedApps: MutableList<America> = mutableListOf()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) : AppsViewHolder {
-        val themedContext = ContextThemeWrapper(
-            parent.context,
-            R.style.Theme_MoreOverlays
-        )
+//        val themedContext = ContextThemeWrapper(
+//            parent.context,
+//            R.style.Theme_MoreOverlays
+//        )
 
-        val view = LayoutInflater.from(themedContext)
+        val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.apps_item, parent, false)
 
         return AppsViewHolder(view)

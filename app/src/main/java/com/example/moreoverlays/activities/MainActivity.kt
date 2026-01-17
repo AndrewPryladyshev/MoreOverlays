@@ -18,6 +18,8 @@ import com.example.moreoverlays.viewModels.MainActivityViewModel
 import com.example.moreoverlays.database.AppData
 import com.example.moreoverlays.database.OverlayConfig
 import com.example.moreoverlays.databinding.ActivityMainBinding
+import com.example.moreoverlays.databinding.FragmentAppearanceBinding
+import com.example.moreoverlays.fragments.AppearanceFragment
 import com.example.moreoverlays.fragments.HandleSettingsFragment
 import com.example.moreoverlays.fragments.MainFragment
 import com.example.moreoverlays.fragments.OverlaySettingsFragment
@@ -26,24 +28,27 @@ import com.example.moreoverlays.services.MyAccessibilityService
 
 
 class MainActivity : AppCompatActivity() {
- //   private lateinit var recyclerView: RecyclerView
+    private val viewModel: MainActivityViewModel by viewModels()
 
     private val PREFS_NAME = "app_settings"
     private val THEME_KEY = "theme_is_dark"
 
     private var appsList: List<AppData> = emptyList()
     private lateinit var overlaysRecyclerView: RecyclerView
-    private val viewModel: MainActivityViewModel by viewModels()
 
     private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        AppCompatDelegate.setDefaultNightMode(getSavedThemeMode())
+
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.main)
         setSupportActionBar(binding.toolbar)
+
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -55,26 +60,28 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        val mainFragment = MainFragment()
-        supportFragmentManager.beginTransaction().apply {
-            replace(R.id.fragmentContainer, mainFragment)
-            commit()
+        if (savedInstanceState == null) {
+            val mainFragment = MainFragment()
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, mainFragment)
+                .commit()
         }
 
         val currentMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
         val isCurrentlyDark = currentMode == Configuration.UI_MODE_NIGHT_YES
 
         binding.toggleThemeBtn.setOnClickListener {
-            val newModeIsDark = !isCurrentlyDark
+            val currentMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+            val isCurrentlyDark = currentMode == Configuration.UI_MODE_NIGHT_YES
 
-            val newDelegateMode = if (newModeIsDark) {
-                AppCompatDelegate.MODE_NIGHT_YES
-            } else {
+            val newMode = if (isCurrentlyDark) {
                 AppCompatDelegate.MODE_NIGHT_NO
+            } else {
+                AppCompatDelegate.MODE_NIGHT_YES
             }
 
-            AppCompatDelegate.setDefaultNightMode(newDelegateMode)
-            saveThemeMode(newModeIsDark)
+            AppCompatDelegate.setDefaultNightMode(newMode)
+            saveThemeMode(newMode == AppCompatDelegate.MODE_NIGHT_YES)
         }
 
 
@@ -111,7 +118,7 @@ class MainActivity : AppCompatActivity() {
         viewSettingsFragment.arguments = bundle
 
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, viewSettingsFragment)
+            .replace(binding.fragmentContainer.id, viewSettingsFragment)
             .addToBackStack(null)
             .commit()
     }
@@ -124,7 +131,19 @@ class MainActivity : AppCompatActivity() {
         handleFragment.arguments = bundle
 
         supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, handleFragment)
+            .replace(binding.fragmentContainer.id, handleFragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    fun openAppearanceSettingsFragment() {
+        val bundle = Bundle().apply {  }
+
+        val appearanceFragment = AppearanceFragment()
+        appearanceFragment.arguments = bundle
+
+        supportFragmentManager.beginTransaction()
+            .replace(binding.fragmentContainer.id, appearanceFragment)
             .addToBackStack(null)
             .commit()
     }
@@ -146,5 +165,6 @@ class MainActivity : AppCompatActivity() {
             AppCompatDelegate.MODE_NIGHT_NO
         }
     }
+
 
 }
