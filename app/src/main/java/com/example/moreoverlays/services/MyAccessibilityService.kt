@@ -1,7 +1,9 @@
 package com.example.moreoverlays.services
 
 import android.accessibilityservice.AccessibilityService
-import android.content.Context
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -10,28 +12,21 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
 import android.view.accessibility.AccessibilityEvent
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.Toast
+import android.view.animation.DecelerateInterpolator
+import android.widget.FrameLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.moreoverlays.Apps
-import com.example.moreoverlays.Notes
 import com.example.moreoverlays.R
-import com.example.moreoverlays.Widgets
-import com.example.moreoverlays.adapters.AppsListAdapter
-import com.example.moreoverlays.database.AppData
 import com.example.moreoverlays.database.AppDatabase
 import com.example.moreoverlays.database.ConfigsRepository
 import com.example.moreoverlays.database.OverlayConfig
 import com.example.moreoverlays.utils.CATCHER_OVERLAY
 import com.example.moreoverlays.utils.DOWN_SWIPE_LEFT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.DOWN_SWIPE_RIGHT_SIDE_OVERLAY
-import com.example.moreoverlays.utils.LEFT_SIDE
 import com.example.moreoverlays.utils.LEFT_SWIPE_OVERLAY
 import com.example.moreoverlays.utils.MAIN_OVERLAY_LEFT
 import com.example.moreoverlays.utils.MAIN_OVERLAY_RIGHT
@@ -48,20 +43,20 @@ import kotlin.math.atan2
 
 class MyAccessibilityService : AccessibilityService() {
     private lateinit var windowManager: WindowManager
+
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var startX = 0f
     private var startY = 0f
-    private var isActive: Boolean = false
     private var overlayList: List<OverlayConfig> = emptyList()
     private val overlayViewsMap = mutableMapOf<Int, View>()
-    private var appsList = listOf<AppData>()
-    private lateinit var selectedApps: MutableList<AppData>
+    private val overlayContentMap = mutableMapOf<Int, View>()
     private lateinit var db: AppDatabase
     private val serviceJob = SupervisorJob()
-    private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
     private lateinit var configsRepository: ConfigsRepository
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        Log.d("ServiceLifecycle", "✅ onServiceConnected — PID: ${android.os.Process.myPid()}")
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
 //        val sharedPrefs = getSharedPreferences("global_prefs", Context.MODE_PRIVATE)
@@ -73,48 +68,14 @@ class MyAccessibilityService : AccessibilityService() {
         db = AppDatabase.getInstance(applicationContext)
         configsRepository = ConfigsRepository(db.daoOverlayConfigs())
 
-//        serviceScope.launch {
-//            selectedApps = configsRepository.getAll()
-//            launch(Dispatchers.Main) {
-//                val appsView = createAppsView(this@MyAccessibilityService, selectedApps)
-//                setOverlayContent(LEFT_SWIPE_OVERLAY, appsView)
-//            }
-//        }
-        serviceScope.launch(Dispatchers.IO) {
-            val overlaysFlow = configsRepository.getAll()
+        serviceScope.launch {
 
-            overlaysFlow.collect { newOverlayList ->
-
-                overlayList = newOverlayList
-
-                launch(Dispatchers.Main) {
-                    if (overlayList.isNotEmpty()) {
-                        createAllOverlays()
-
-                        val leftConfig = overlayList.find { it.id == MAIN_OVERLAY_LEFT }
-                        val rightConfig = overlayList.find { it.id == MAIN_OVERLAY_RIGHT }
-
-                        val isLeftEnabled = leftConfig?.isEnabled == true
-                        val isRightEnabled = rightConfig?.isEnabled == true
-
-                        Log.d("DEBUG_MINES", "Left Config Enabled: $isLeftEnabled")
-                        Log.d("DEBUG_MINES", "Right Config Enabled: $isRightEnabled")
-
-                        if (isLeftEnabled) {
-                            showOverlayById(MAIN_OVERLAY_LEFT)
-                        } else {
-                            hideOverlayById(MAIN_OVERLAY_LEFT)
-                        }
-
-                        if (isRightEnabled) {
-                            showOverlayById(MAIN_OVERLAY_RIGHT)
-                        } else {
-                            hideOverlayById(MAIN_OVERLAY_RIGHT)
-                        }
-
-                    } else {
-                        show("No overlay data found in Database")
-                    }
+            configsRepository.getAll().collect { newOverlayList ->
+//                if (newOverlayList.isEmpty()) return@collect
+                Log.d("ServiceLifecycle", "📦 DB emitted list, size=${newOverlayList.size}")
+                if (newOverlayList.isNotEmpty()) {
+                    overlayList = newOverlayList
+                    setupOverlay()
                 }
             }
         }
@@ -122,7 +83,7 @@ class MyAccessibilityService : AccessibilityService() {
 
 
     override fun onInterrupt() {
-        Log.d("GestureService", "Service interrupted")
+        Log.d("ServiceLifecycle", "⚠️ onInterrupt called")
     }
 
 
@@ -130,391 +91,224 @@ class MyAccessibilityService : AccessibilityService() {
 
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d("ServiceLifecycle", "💀 onDestroy called — PID: ${android.os.Process.myPid()}")
+        serviceJob.cancel()
+    }
 
-    // HANDLE ALL TOUCH EVENTS
-    private fun handleTouch(event: MotionEvent?, id: Int) {
-        val rawX = event?.rawX
-        val rawY = event?.rawY
+    private fun setupOverlay() {
+        Log.d("ServiceLifecycle", "🔧 setupOverlay called, list size=${overlayList.size}")
 
-
-        when (event?.action) {
-            MotionEvent.ACTION_DOWN -> {
-                startX = rawX!!
-                startY = rawY!!
-                Log.d("GestureService", "Touch down at: ($rawX, $rawY)")
-            }
-            MotionEvent.ACTION_MOVE -> {
-                Log.d("GestureService", "Touch move at: ($rawX, $rawY)")
-            }
-            MotionEvent.ACTION_UP -> {
-                Log.d("GestureService", "Touch up at: ($rawX, $rawY)")
-
-                when (id) {
-                    MAIN_OVERLAY_LEFT -> {
-                        recognizeGesture(rawX!!, rawY!!, id)
-                    }
-                    MAIN_OVERLAY_RIGHT -> {
-                        recognizeGesture(rawX!!, rawY!!, id)
-                    }
-
-                    CATCHER_OVERLAY -> {
-                        if (isActive) {
-                            if (isConfigEnabled(MAIN_OVERLAY_LEFT)) showOverlayById(MAIN_OVERLAY_LEFT)
-                            if (isConfigEnabled(MAIN_OVERLAY_RIGHT)) showOverlayById(MAIN_OVERLAY_RIGHT)
-                            hideOverlaysExcept(MAIN_OVERLAY_LEFT)
-                            hideOverlaysExcept(MAIN_OVERLAY_RIGHT)
-                        }
-                    }
-                    else -> {
-
-                        }
+        overlayViewsMap.values.forEach { view ->
+            try {
+                if (view.isAttachedToWindow) {
+                    windowManager.removeView(view)
                 }
+            } catch (e: IllegalArgumentException) {
+                Log.e("Service", "View not attached, skip removal")
+            }
+        }
+        overlayViewsMap.clear()
+        overlayContentMap.clear()
 
+        overlayList.forEach { config ->
+            val root = createRootView(config)
+
+            if (config.id !in listOf(MAIN_OVERLAY_LEFT, MAIN_OVERLAY_RIGHT, CATCHER_OVERLAY)) {
+                val content = createContent(config)
+                root.addView(content)
             }
 
+            windowManager.addView(root, getLayoutParamsForConfig(config))
+            overlayViewsMap[config.id] = root
+
+            if (config.id == MAIN_OVERLAY_LEFT || config.id == MAIN_OVERLAY_RIGHT) {
+                root.visibility = if (config.isEnabled) View.VISIBLE else View.GONE
+            } else {
+                root.visibility = View.GONE
+            }
         }
 
     }
 
-    // WHICH GESTURE WAS MADE
+
+    private fun createRootView(config: OverlayConfig): FrameLayout {
+        val layout = FrameLayout(this)
+        layout.apply {
+            id = config.id
+            setBackgroundColor(if (id == MAIN_OVERLAY_LEFT || id == MAIN_OVERLAY_RIGHT) Color.DKGRAY else Color.TRANSPARENT)
+
+            if (config.id in listOf(MAIN_OVERLAY_LEFT, MAIN_OVERLAY_RIGHT, CATCHER_OVERLAY)) {
+                setOnTouchListener { view, event ->
+                    handleTouch(event, view.id)
+                    if (view.id != CATCHER_OVERLAY) view.performClick()
+                    true
+                }
+            }
+
+        }
+        if (config.id !in listOf(MAIN_OVERLAY_LEFT, MAIN_OVERLAY_RIGHT, CATCHER_OVERLAY)) {
+            layout.layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        return layout
+    }
+
+    private fun createContent(config: OverlayConfig): View {
+        val layout = LayoutInflater.from(this).inflate(R.layout.apps_overlay_layout, null)
+        val rv = layout.findViewById<RecyclerView>(R.id.rv)
+
+        val bg = if (config.side == RIGHT_SIDE) R.drawable.right_side_overlay_bg else R.drawable.left_side_overlay_bg
+        rv.setBackgroundResource(bg)
+
+        val item = config.contentTypes.filterIsInstance<Apps>().firstOrNull()
+        if (item != null) {
+            val adapter = AccessibilityAppsListAdapter(onItemClicked = { appData ->
+                Log.d("TAG1", "LAUNCHING APP")
+                launchApp(appData.appPackage)
+            })
+
+            rv.layoutManager = LinearLayoutManager(applicationContext)
+            rv.adapter = adapter
+
+            adapter.submitList(createAppData(item.apps, this))
+        }
+        return layout
+    }
+
+    private fun getLayoutParamsForConfig(config: OverlayConfig): LayoutParams {
+        val flags = LayoutParams.FLAG_NOT_FOCUSABLE or LayoutParams.FLAG_NOT_TOUCH_MODAL
+
+        val params = LayoutParams().apply {
+            width = if (config.id == CATCHER_OVERLAY) LayoutParams.MATCH_PARENT else config.width
+            height = if (config.id == CATCHER_OVERLAY) LayoutParams.MATCH_PARENT else config.height
+            this.type = LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
+            this.flags = if (config.id == CATCHER_OVERLAY) LayoutParams.FLAG_NOT_FOCUSABLE else flags
+            format = PixelFormat.TRANSLUCENT
+            gravity = when (config.id) {
+                MAIN_OVERLAY_LEFT -> Gravity.BOTTOM or Gravity.START
+                MAIN_OVERLAY_RIGHT -> Gravity.BOTTOM or Gravity.END
+                CATCHER_OVERLAY -> Gravity.FILL
+                else -> if (config.side == RIGHT_SIDE) Gravity.BOTTOM or Gravity.END else Gravity.BOTTOM or Gravity.START
+            }
+            x = config.x
+            y = config.y
+        }
+        return params
+    }
+
+    private fun launchApp(appPackage: String){
+        val intent = packageManager.getLaunchIntentForPackage(appPackage)
+        intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        Log.d("TAG", "Launch working")
+        startActivity(intent)
+        closeAllMenus()
+    }
+
+    private fun handleTouch(event: MotionEvent?, id: Int) {
+        val rawX = event?.rawX ?: 0f
+        val rawY = event?.rawY ?: 0f
+
+        when (event?.action) {
+            MotionEvent.ACTION_DOWN -> {
+                startX = rawX
+                startY = rawY
+            }
+            MotionEvent.ACTION_UP -> {
+                if (id == CATCHER_OVERLAY) {
+                    closeAllMenus()
+                    overlayContentMap[id]?.visibility = View.GONE
+                } else if (id == MAIN_OVERLAY_LEFT || id == MAIN_OVERLAY_RIGHT) {
+                    recognizeGesture(rawX, rawY, id)
+                }
+            }
+        }
+    }
+
     private fun recognizeGesture(endX: Float, endY: Float, id: Int) {
         val dx = endX - startX
         val dy = endY - startY
         val angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble()))
 
-
-        if (id == MAIN_OVERLAY_RIGHT) {
-            when {
-
-                angle in 90.0..150.0 -> {
-                    show("↙ Down Left Swipe ")
-                    hideOverlayById(MAIN_OVERLAY_RIGHT)
-                    hideOverlayById(MAIN_OVERLAY_LEFT)
-                    displayOverlayContent(DOWN_SWIPE_RIGHT_SIDE_OVERLAY)
-                    showOverlayById(DOWN_SWIPE_RIGHT_SIDE_OVERLAY)
-                    showOverlayById(CATCHER_OVERLAY)
-                    overlayViewsMap[CATCHER_OVERLAY]?.setBackgroundColor(Color.TRANSPARENT)
-                    isActive = true
-                }
-
-                angle in -150.0..-90.0 -> {
-                    show("↖ Up Left Swipe")
-                    hideOverlayById(MAIN_OVERLAY_RIGHT)
-                    hideOverlayById(MAIN_OVERLAY_LEFT)
-                    displayOverlayContent(UP_SWIPE_RIGHT_SIDE_OVERLAY)
-                    showOverlayById(UP_SWIPE_RIGHT_SIDE_OVERLAY)
-                    showOverlayById(CATCHER_OVERLAY)
-                    overlayViewsMap[CATCHER_OVERLAY]?.setBackgroundColor(Color.TRANSPARENT)
-                    isActive = true
-                }
-                // LEFT SWIPE
-                angle > 150.0 || angle < -150.0 -> {
-                    show("← Left Swipe")
-                    hideOverlayById(MAIN_OVERLAY_RIGHT)
-                    hideOverlayById(MAIN_OVERLAY_LEFT)
-                    displayOverlayContent(LEFT_SWIPE_OVERLAY)
-                    showOverlayById(LEFT_SWIPE_OVERLAY)
-                    showOverlayById(CATCHER_OVERLAY)
-                    overlayViewsMap[CATCHER_OVERLAY]?.setBackgroundColor(Color.TRANSPARENT)
-                    isActive = true
-                    // SHOW OVERLAY DEPENDS ON GESTURE
-                }
-
-                else -> {
-                    Log.d("GestureService", "Unrecognized gesture with angle: $angle")
-                    show("IDK WTF IS THAT BITCH")
-                }
+        val targetOverlayId = when (id) {
+            MAIN_OVERLAY_RIGHT -> when {
+                angle in 90.0..150.0 -> DOWN_SWIPE_RIGHT_SIDE_OVERLAY
+                angle in -150.0..-90.0 -> UP_SWIPE_RIGHT_SIDE_OVERLAY
+                angle > 150.0 || angle < -150.0 -> LEFT_SWIPE_OVERLAY
+                else -> null
             }
-
-        } else if (id == MAIN_OVERLAY_LEFT) {
-            when (angle) {
-                in -90.0..-30.0 -> {
-                    show("↗ Up Right Swipe ")
-                    hideOverlayById(MAIN_OVERLAY_RIGHT)
-                    hideOverlayById(MAIN_OVERLAY_LEFT)
-                    displayOverlayContent(UP_SWIPE_LEFT_SIDE_OVERLAY)
-                    showOverlayById(UP_SWIPE_LEFT_SIDE_OVERLAY)
-                    showOverlayById(CATCHER_OVERLAY)
-                    overlayViewsMap[CATCHER_OVERLAY]?.setBackgroundColor(Color.TRANSPARENT)
-                    isActive = true
-                }
-
-                in -30.0..30.0 -> {
-                    show("→ Right Swipe")
-                    hideOverlayById(MAIN_OVERLAY_RIGHT)
-                    hideOverlayById(MAIN_OVERLAY_LEFT)
-                    displayOverlayContent(RIGHT_SWIPE_OVERLAY)
-                    showOverlayById(RIGHT_SWIPE_OVERLAY)
-                    showOverlayById(CATCHER_OVERLAY)
-                    overlayViewsMap[CATCHER_OVERLAY]?.setBackgroundColor(Color.TRANSPARENT)
-                    isActive = true
-
-                }
-
-                in 30.0..90.0 -> {
-                    show("↘ Down Right Swipe")
-                    hideOverlayById(MAIN_OVERLAY_RIGHT)
-                    hideOverlayById(MAIN_OVERLAY_LEFT)
-                    displayOverlayContent(DOWN_SWIPE_LEFT_SIDE_OVERLAY)
-                    showOverlayById(DOWN_SWIPE_LEFT_SIDE_OVERLAY)
-                    showOverlayById(CATCHER_OVERLAY)
-                    overlayViewsMap[CATCHER_OVERLAY]?.setBackgroundColor(Color.TRANSPARENT)
-                    isActive = true
-                }
-
-                else -> {
-                    Log.d("GestureService", "Unrecognized gesture with angle: $angle")
-                    show("IDK WTF IS THAT BITCH")
-                }
+            MAIN_OVERLAY_LEFT -> when (angle) {
+                in -90.0..-30.0 -> UP_SWIPE_LEFT_SIDE_OVERLAY
+                in -30.0..30.0 -> RIGHT_SWIPE_OVERLAY
+                in 30.0..90.0 -> DOWN_SWIPE_LEFT_SIDE_OVERLAY
+                else -> null
             }
-
+            else -> null
         }
-
-    }
-
-
-    private fun show(text: String) {
-        Log.d("GestureService", text)
-        Toast.makeText(applicationContext, text, Toast.LENGTH_SHORT).show()
-    }
-
-
-    // GET LIST WITH OVERLAYS PARAMS FROM OTHER ACTIVITY AND CREATE OVERLAYS FOR EACH ONE
-    private fun createAllOverlays() {
-
-        overlayViewsMap.values.forEach { view ->
-            try {
-                windowManager.removeView(view)
-            } catch (e: Exception) {
-                Log.e("Service", "Error removing view: ${e.message}")
-            }
-        }
-        overlayViewsMap.clear()
-
-        overlayList.forEach { item ->
-            val overlayView = item.createOverlay(this)
-            overlayView.visibility = View.GONE
-            overlayView.id = item.id
-            val params: WindowManager.LayoutParams
-
-
-            when (item.id) {
-                MAIN_OVERLAY_RIGHT -> {
-                    params = WindowManager.LayoutParams(
-                        item.width,
-                        item.height,
-                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                        PixelFormat.TRANSLUCENT
-                    ).apply {
-                        gravity = Gravity.BOTTOM or Gravity.END
-                        x = item.x
-                        y = item.y
-                    }
-                }
-
-                MAIN_OVERLAY_LEFT -> {
-                    params = WindowManager.LayoutParams(
-                        item.width,
-                        item.height,
-                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                        PixelFormat.TRANSLUCENT
-                    ).apply {
-                        gravity = Gravity.BOTTOM or Gravity.START
-                        x = item.x
-                        y = item.y
-                    }
-                }
-
-                CATCHER_OVERLAY -> {
-                    params = WindowManager.LayoutParams(
-                        WindowManager.LayoutParams.MATCH_PARENT,
-                        WindowManager.LayoutParams.MATCH_PARENT,
-                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                        PixelFormat.TRANSLUCENT
-                    ).apply {
-                        gravity = Gravity.BOTTOM or Gravity.END
-                        x = item.x
-                        y = item.y
-                    }
-                }
-                else -> {
-                    params = WindowManager.LayoutParams(
-                        WindowManager.LayoutParams.WRAP_CONTENT,
-                        WindowManager.LayoutParams.WRAP_CONTENT,
-                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                        PixelFormat.TRANSLUCENT
-                    ).apply {
-                        gravity = if (item.side == RIGHT_SIDE) {
-                            Gravity.BOTTOM or Gravity.END
-                        } else {
-                            Gravity.BOTTOM or Gravity.START
-                        }
-
-                        x = item.x
-                        y = item.y
-                    }
-                }
-            }
-
-            overlayView.setOnTouchListener { view, event ->
-                handleTouch(event, view.id)
-                if (view.id != CATCHER_OVERLAY) view.performClick() else false
-            }
-
-            windowManager.addView(overlayView, params)
-            overlayViewsMap[item.id] = overlayView
-
+        Log.d("TAG", "$targetOverlayId")
+        if (targetOverlayId != null) {
+            showMenu(targetOverlayId)
         }
     }
 
-    private fun createAppsView(context: Context, apps: List<AppData>, side: Int): View {
+    private fun showMenu(id: Int) {
 
-//        val layout = LinearLayout(context).apply {
-//            orientation = LinearLayout.VERTICAL
-//            setBackgroundResource(R.drawable.right_side_overlay_bg)
-//            setPadding(32, 32, 32, 32)
-//        }
+        overlayViewsMap[CATCHER_OVERLAY]?.visibility = View.VISIBLE
+        val menuView = overlayViewsMap[id]
 
-        val layout = LayoutInflater.from(applicationContext).inflate(R.layout.apps_overlay_layout, null)
-        val rv: RecyclerView = layout.findViewById(R.id.rv)
-        val bgResource = when (side) {
-            RIGHT_SIDE -> {
-                R.drawable.right_side_overlay_bg
+        menuView?.let {
+            it.visibility = View.VISIBLE
+            animateSlideIn(it)
+            overlayViewsMap[MAIN_OVERLAY_LEFT]?.visibility = View.GONE
+            overlayViewsMap[MAIN_OVERLAY_RIGHT]?.visibility = View.GONE
+        }
+    }
+
+    private fun closeAllMenus() {
+        overlayViewsMap.forEach { (id, view) ->
+            if (id == MAIN_OVERLAY_LEFT || id == MAIN_OVERLAY_RIGHT) {
+                if (isOverlayEnabled(id)) view.visibility = View.VISIBLE
             }
-            LEFT_SIDE -> {
-                R.drawable.left_side_overlay_bg
-            }
-
-            else -> { null }
-        }
-
-        if (bgResource != null) {
-            rv.setBackgroundResource(bgResource)
-        }
-
-        val appsList = createAppData(apps, applicationContext)
-
-        val adapter = AppsListAdapter(onItemClicked = { _, appData ->
-            val intent = context.packageManager.getLaunchIntentForPackage(appData.appPackage)
-            intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-            hideOverlaysExcept(MAIN_OVERLAY_LEFT)
-            hideOverlaysExcept(MAIN_OVERLAY_RIGHT)
-            if (isConfigEnabled(MAIN_OVERLAY_LEFT)) showOverlayById(MAIN_OVERLAY_LEFT)
-            if (isConfigEnabled(MAIN_OVERLAY_RIGHT)) showOverlayById(MAIN_OVERLAY_RIGHT)
-        })
-        adapter.isClickable = true
-
-        rv.adapter = adapter
-        adapter.submitList(appsList)
-        rv.layoutManager = LinearLayoutManager(context).apply {
-            orientation = RecyclerView.VERTICAL
-            LayoutParams.WRAP_CONTENT
-            LayoutParams.WRAP_CONTENT
-
-        }
-
-//        for (app in apps) {
-//            val icon = ImageView(context).apply {
-//                setImageDrawable(context.packageManager.getApplicationIcon(app.appPackage))
-////                layoutParams = LinearLayout.LayoutParams(150, 150).apply {
-////                    //marginEnd = 16
-////                    setBackgroundColor(Color.TRANSPARENT)
-////                }
-//                setOnClickListener {
-//                    val intent = context.packageManager.getLaunchIntentForPackage(app.appPackage)
-//                    intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-//                    context.startActivity(intent)
-//                    hideOverlaysExcept(MAIN_OVERLAY_LEFT)
-//                    hideOverlaysExcept(MAIN_OVERLAY_RIGHT)
-//                    if (isConfigEnabled(MAIN_OVERLAY_LEFT)) showOverlayById(MAIN_OVERLAY_LEFT)
-//                    if (isConfigEnabled(MAIN_OVERLAY_RIGHT)) showOverlayById(MAIN_OVERLAY_RIGHT)
-//                }
-//                scaleType = ImageView.ScaleType.CENTER_INSIDE
-//                scaleX = 1f
-//                scaleY = 1f
-//            }
-//            layout.addView(icon)
-//        }
-
-        return layout
-    }
-
-    // set new content on overlay
-    private fun setOverlayContent(overlayId: Int, newContent: View) {
-        val container = overlayViewsMap[overlayId] as? ViewGroup ?: return
-//        val catcherOverlay = overlayViewsMap[CATCHER_OVERLAY] as? ViewGroup ?: return
-        container.removeAllViews()
-        container.addView(newContent)
-    }
-
-    private fun displayOverlayContent(overlayId: Int) {
-        val config = overlayList.find { it.id == overlayId }
-        if (config == null) {
-            Log.e("Service", "Config not found for overlay ID: $overlayId")
-            return
-        }
-
-        val rootLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            LayoutParams.WRAP_CONTENT
-            LayoutParams.WRAP_CONTENT
-            setBackgroundColor(Color.TRANSPARENT)
-        }
-
-        config.contentTypes.forEach { item ->
-            when (item) {
-                is Apps -> {
-                    val appsView = createAppsView(this, item.apps, config.side)
-                    rootLayout.addView(appsView)
-                }
-                is Notes -> {
-
-                }
-                is Widgets -> {
-
-                }
-
-            }
-        }
-
-        setOverlayContent(overlayId, rootLayout)
-    }
-
-    private fun showOverlayById(id: Int) {
-        overlayViewsMap[id]?.visibility = View.VISIBLE
-        if (id == MAIN_OVERLAY_RIGHT || id == MAIN_OVERLAY_LEFT) {
-            overlayViewsMap[id]?.setBackgroundColor(Color.DKGRAY)
-        } else overlayViewsMap[id]?.setBackgroundColor(Color.TRANSPARENT)
-    }
-
-
-    private fun hideOverlayById(id: Int) {
-        overlayViewsMap[id]?.visibility = View.GONE
-    }
-
-
-    private fun hideOverlaysExcept(id: Int) {
-        overlayViewsMap.forEach { (overlayId, view) ->
-            if (overlayId != id && overlayId != MAIN_OVERLAY_RIGHT && overlayId != MAIN_OVERLAY_LEFT) {
+            else if (id == CATCHER_OVERLAY) {
                 view.visibility = View.GONE
             }
+            else {
+                animateSlideOut(view)
+            }
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        serviceJob.cancel()
+    private fun animateSlideIn(view: View?) {
+        if (view != null) {
+            val width = view.width.toFloat()
+            view.translationX = width
+            ObjectAnimator.ofFloat(view, "translationX", width, 0f).apply {
+                duration = 200
+                interpolator = DecelerateInterpolator()
+                start()
+            }
+        }
     }
 
-    private fun isConfigEnabled(id: Int): Boolean {
-        return overlayList.find { it.id == id }?.isEnabled == true
+    private fun animateSlideOut(view: View) {
+        val width = view.width.toFloat()
+        view.translationX = width
+        ObjectAnimator.ofFloat(view, "translationX", 0f, width).apply {
+            duration = 200
+            interpolator = DecelerateInterpolator()
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    view.visibility = View.GONE
+                }
+            })
+            start()
+        }
+    }
+
+    private fun isOverlayEnabled(id: Int): Boolean {
+        return overlayList.find { it.id == id }?.isEnabled ?: false
     }
 }

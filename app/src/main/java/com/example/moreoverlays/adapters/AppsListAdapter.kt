@@ -25,7 +25,7 @@ class AppsListAdapter(private val onItemClicked: (Boolean, AppData) -> Unit, ) :
 //            R.style.Theme_MoreOverlays
 //        )
 
-        val view = LayoutInflater.from(parent.context)
+        val view = LayoutInflater.from(ContextThemeWrapper(parent.context, R.style.Theme_MoreOverlays))
             .inflate(R.layout.apps_item, parent, false)
 
         return AppsViewHolder(view)

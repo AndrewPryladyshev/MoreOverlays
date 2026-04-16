@@ -1,5 +1,6 @@
 package com.example.moreoverlays.fragments
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -21,6 +22,7 @@ import com.example.moreoverlays.utils.RIGHT_SIDE
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import android.provider.Settings
 
 class MainFragment : Fragment(R.layout.fragment_main) {
 
@@ -63,6 +65,11 @@ class MainFragment : Fragment(R.layout.fragment_main) {
 
         appearanceBtn.setOnClickListener {
             (activity as? MainActivity)?.openAppearanceSettingsFragment()
+        }
+
+        binding.switchMasterToggle.setOnCheckedChangeListener {_, _ ->
+            val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+            startActivity(intent)
         }
 
 

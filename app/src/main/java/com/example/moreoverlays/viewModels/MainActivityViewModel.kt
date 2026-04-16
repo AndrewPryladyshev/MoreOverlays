@@ -3,14 +3,13 @@ package com.example.moreoverlays.viewModels
 import android.app.Application
 import android.util.Log
 import android.view.WindowManager
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moreoverlays.America
 import com.example.moreoverlays.Apps
 import com.example.moreoverlays.ContentTypeData
 import com.example.moreoverlays.Notes
-import com.example.moreoverlays.OverlayPreviewState
+import com.example.moreoverlays.appearance_settings.OverlayPreviewState
 import com.example.moreoverlays.Widgets
 import com.example.moreoverlays.database.AppData
 import com.example.moreoverlays.database.AppDatabase
@@ -39,7 +38,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -108,9 +106,9 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
             OverlayConfig(CATCHER_OVERLAY, "", WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT, 0, 0, mutableListOf(), NOTHING),
             OverlayConfig(MAIN_OVERLAY_RIGHT, "",40, 350, 0, 1000, mutableListOf(), NOTHING),
             OverlayConfig(MAIN_OVERLAY_LEFT, "",40, 350, 0, 1000, mutableListOf(), NOTHING),
-            OverlayConfig(DOWN_SWIPE_RIGHT_SIDE_OVERLAY, "Right Down Swipe Overlay", 40, 500, 0, 0, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
-            OverlayConfig(LEFT_SWIPE_OVERLAY, "Left Swipe Overlay",500, 500, 100, 500, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
-            OverlayConfig(UP_SWIPE_RIGHT_SIDE_OVERLAY, "Right Up Swipe Overlay", 40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
+            OverlayConfig(DOWN_SWIPE_RIGHT_SIDE_OVERLAY, "Right Down Swipe Overlay", WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, 0, 0, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
+            OverlayConfig(LEFT_SWIPE_OVERLAY, "Left Swipe Overlay", WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, 0, 500, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
+            OverlayConfig(UP_SWIPE_RIGHT_SIDE_OVERLAY, "Right Up Swipe Overlay", WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
             OverlayConfig(DOWN_SWIPE_LEFT_SIDE_OVERLAY, "Left Down Swipe Overlay",40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
             OverlayConfig(RIGHT_SWIPE_OVERLAY, "Right Swipe Overlay",40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
             OverlayConfig(UP_SWIPE_LEFT_SIDE_OVERLAY, "Left Up Swipe Overlay",40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
@@ -252,22 +250,33 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     }
 
     fun updatePreviewSide(previewId: Int, newSide: String) {
-        val updatedList = _previewOverlayStates.value.map { state ->
-            if (state.id == previewId) {
-                state.copy(displayMode = newSide)
+        val updatedList = _previewOverlayStates.value.map { opState ->
+            if (opState.id == previewId) {
+                opState.copy(displayMode = newSide)
             } else {
-                state
+                opState
             }
         }
         _previewOverlayStates.value = updatedList
     }
 
     fun updatePreviewOpacity(id: Int, opacity: Float) {
-        val updatedList = _previewOverlayStates.value.map { state ->
-            if (state.id == id) {
-                state.copy(opacity = opacity)
+        val updatedList = _previewOverlayStates.value.map { opState ->
+            if (opState.id == id) {
+                opState.copy(opacity = opacity)
             } else {
-                state
+                opState
+            }
+        }
+        _previewOverlayStates.value = updatedList
+    }
+
+    fun updatePreviewCorners(id: Int, corners: Int) {
+        val updatedList = _previewOverlayStates.value.map { opState ->
+            if (opState.id == id) {
+                opState.copy(cornerSize = corners)
+            } else {
+                opState
             }
         }
         _previewOverlayStates.value = updatedList

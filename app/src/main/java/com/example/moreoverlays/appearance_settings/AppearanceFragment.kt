@@ -1,31 +1,31 @@
-package com.example.moreoverlays.fragments
+package com.example.moreoverlays.appearance_settings
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.example.moreoverlays.R
-import com.example.moreoverlays.adapters.PreviewAdapter
 import com.example.moreoverlays.database.OverlayConfig
 import com.example.moreoverlays.databinding.FragmentAppearanceBinding
-import com.example.moreoverlays.utils.DOWN_SWIPE_RIGHT_SIDE_OVERLAY
-import com.example.moreoverlays.utils.LEFT_SWIPE_OVERLAY
+import com.example.moreoverlays.databinding.LayoutTopSheetBinding
+import com.example.moreoverlays.external.mytopsheet.TopSheetDialog
 import com.example.moreoverlays.utils.MAIN_OVERLAY_LEFT
 import com.example.moreoverlays.utils.MAIN_OVERLAY_RIGHT
-import com.example.moreoverlays.utils.UP_SWIPE_RIGHT_SIDE_OVERLAY
 import com.example.moreoverlays.viewModels.MainActivityViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-
 
 class AppearanceFragment : Fragment(R.layout.fragment_appearance) {
 
@@ -39,7 +39,7 @@ class AppearanceFragment : Fragment(R.layout.fragment_appearance) {
     private var dX = 0f
     private var dY = 0f
 
-    private lateinit var pagerAdapter: PreviewAdapter
+//    private lateinit var pagerAdapter: PreviewAdapter
     private var currentOverlayIds = listOf(MAIN_OVERLAY_LEFT, MAIN_OVERLAY_RIGHT)
 
     override fun onCreateView(
@@ -60,42 +60,73 @@ class AppearanceFragment : Fragment(R.layout.fragment_appearance) {
 //        binding.leftDetector.isClickable = false
 //        binding.rightDetector.isClickable = false
 
-        val pager = binding.previewPager
-        pagerAdapter = PreviewAdapter()
-        pager.adapter = pagerAdapter
+//        val pager = binding.previewPager
+//        pagerAdapter = PreviewAdapter()
+//        pager.adapter = pagerAdapter
 
-        val currentItem = pagerAdapter.currentList.getOrNull(pager.currentItem)
+//        val currentItem = pagerAdapter.currentList.getOrNull(pager.currentItem)
 
+//        val dialog = TopSheetDialog(requireContext())
+//        val sheetBinding = LayoutTopSheetBinding.inflate(layoutInflater)
+//
+//        dialog.setContentView(sheetBinding.root)
+//        dialog.setOwnerActivity(requireActivity())
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+//            dialog.window?.attributes?.layoutInDisplayCutoutMode =
+//                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+//        }
+//
+//        dialog.window?.let { window ->
+//            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+//            window.addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL)
+//        }
+//
+//        dialog.show()
 
+//        val statusBarSpacer = sheetBinding.statusBarSpacer
+//
+//        val insets = ViewCompat.getRootWindowInsets(requireView())
+//        val statusBarHeight = insets?.getInsets(WindowInsetsCompat.Type.statusBars())?.top ?: 0
+//
+//        if (statusBarSpacer.layoutParams.height != statusBarHeight) {
+//            statusBarSpacer.layoutParams.height = statusBarHeight
+//            statusBarSpacer.requestLayout()
+//        }
 
-        binding.toggleSideSelector.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                val side = when (checkedId) {
-                    R.id.btnLeft -> "left"
-                    R.id.btnBoth -> "both"
-                    else -> "right"
-                }
-                updateLivePreview(side)
-            }
+        binding.leftDetector.setOnClickListener {
+            Log.d("DebugHIHIHIHA", "clicking...")
         }
 
-        binding.previewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                val item = pagerAdapter.currentList.getOrNull(position)
-                item?.let {
-                    val buttonId = when(it.displayMode) {
-                        "left" -> R.id.btnLeft
-                        "both" -> R.id.btnBoth
-                        else -> R.id.btnRight
-                    }
-                    currentOverlayIds = item.overlayIds
 
-                    binding.toggleSideSelector.check(buttonId)
-                }
-            }
-        })
 
-        binding.sliderOpacity.setLabelFormatter { value ->
+//        binding.toggleSideSelector.addOnButtonCheckedListener { _, checkedId, isChecked ->
+//            if (isChecked) {
+//                val side = when (checkedId) {
+//                    R.id.btnLeft -> "left"
+//                    R.id.btnBoth -> "both"
+//                    else -> "right"
+//                }
+//                updateLivePreview(side)
+//            }
+//        }
+
+//        binding.previewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+//            override fun onPageSelected(position: Int) {
+//                val item = pagerAdapter.currentList.getOrNull(position)
+//                item?.let {
+//                    val buttonId = when(it.displayMode) {
+//                        "left" -> R.id.btnLeft
+//                        "both" -> R.id.btnBoth
+//                        else -> R.id.btnRight
+//                    }
+//                    currentOverlayIds = item.overlayIds
+//
+//                    binding.toggleSideSelector.check(buttonId)
+//                }
+//            }
+//        })
+
+        binding.layout.layout.sliderOpacity.setLabelFormatter { value ->
             if (value % 1 == 0f) {
                 value.toInt().toString()
             } else {
@@ -103,15 +134,19 @@ class AppearanceFragment : Fragment(R.layout.fragment_appearance) {
             }
         }
 
-        binding.sliderWidth.setLabelFormatter { value ->
+        binding.layout.layout.sliderWidth.setLabelFormatter { value ->
             "${value.toInt()}%"
         }
 
 //        binding.leftDetector.alpha = binding.sliderOpacity.value
 //        binding.rightDetector.alpha = binding.sliderOpacity.value
 
-        binding.sliderOpacity.addOnChangeListener {slider, value, fromUser ->
+        binding.layout.layout.sliderOpacity.addOnChangeListener {slider, value, fromUser ->
             changeOpacity(value)
+        }
+
+        binding.layout.layout.sliderCornerRadius.addOnChangeListener { slider,value,fromUser ->
+            changeCorners(corners = value.toInt())
         }
 
 //          ____FOR DETECTORS' POSITION CHANGING____
@@ -197,7 +232,7 @@ class AppearanceFragment : Fragment(R.layout.fragment_appearance) {
 //                            )
 
                         Log.d("AFDEBUG", "returned list2: $previewStates")
-                        pagerAdapter.submitList(previewStates)
+//                        pagerAdapter.submitList(previewStates)
                     }
                 }
             }
@@ -205,14 +240,29 @@ class AppearanceFragment : Fragment(R.layout.fragment_appearance) {
 
     }
 
-    private fun changeOpacity(opacity: Float) {
-        val currentPos = binding.previewPager.currentItem
-        val currentItem = pagerAdapter.currentList.getOrNull(currentPos)
+    private fun changeCorners(corners: Int) {}
 
-        currentItem?.let {
-            viewModel.updatePreviewOpacity(it.id, opacity)
-        }
+    private fun changeOpacity(value: Float) {
+        TODO("Not yet implemented")
     }
+
+//    private fun changeOpacity(opacity: Float) {
+//        val currentPos = binding.previewPager.currentItem
+//        val currentItem = pagerAdapter.currentList.getOrNull(currentPos)
+
+//        currentItem?.let {
+//            viewModel.updatePreviewOpacity(it.id, opacity)
+//        }
+//    }
+
+//    private fun changeCorners(corners: Int) {
+//        val currentPos = binding.previewPager.currentItem
+//        val currentItem = pagerAdapter.currentList.getOrNull(currentPos)
+//
+//        currentItem?.let {
+//            viewModel.updatePreviewCorners(it.id, corners)
+//        }
+//    }
 
     // ON TOUCH CHANGING POSITION
     private fun changePosition(view: View?, event: MotionEvent) {
@@ -244,19 +294,20 @@ class AppearanceFragment : Fragment(R.layout.fragment_appearance) {
 //                } else {
 //                    viewModel.updatePosition(MAIN_OVERLAY_LEFT, finalX, finalY)
 //                }
+
             }
         }
     }
 
 
-    private fun updateLivePreview(side: String) {
-        val currentPos = binding.previewPager.currentItem
-        val currentItem = pagerAdapter.currentList.getOrNull(currentPos)
-
-        currentItem?.let {
-            viewModel.updatePreviewSide(it.id, side)
-        }
-    }
+//    private fun updateLivePreview(side: String) {
+//        val currentPos = binding.previewPager.currentItem
+//        val currentItem = pagerAdapter.currentList.getOrNull(currentPos)
+//
+//        currentItem?.let {
+//            viewModel.updatePreviewSide(it.id, side)
+//        }
+//    }
 
     override fun onDestroyView() {
         super.onDestroyView()

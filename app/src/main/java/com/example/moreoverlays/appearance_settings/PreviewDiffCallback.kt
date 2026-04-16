@@ -1,8 +1,6 @@
-package com.example.moreoverlays.utils
+package com.example.moreoverlays.appearance_settings
 
 import androidx.recyclerview.widget.DiffUtil
-import com.example.moreoverlays.OverlayPreviewState
-import com.example.moreoverlays.database.OverlayConfig
 
 class PreviewDiffCallback : DiffUtil.ItemCallback<OverlayPreviewState>() {
 
@@ -18,6 +16,7 @@ class PreviewDiffCallback : DiffUtil.ItemCallback<OverlayPreviewState>() {
         val diff = mutableSetOf<String>()
         if (oldItem.displayMode != newItem.displayMode) diff.add("SIDE_CHANGED")
         if (oldItem.opacity != newItem.opacity) diff.add("OPACITY_CHANGED")
+        if (oldItem.cornerSize != newItem.cornerSize) diff.add("CORNERS_CHANGED")
 
         return diff.ifEmpty { null }
     }

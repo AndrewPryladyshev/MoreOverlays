@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="TopSheet_DialogAnimation">
+        <item name="android:windowEnterAnimation">@anim/slide_out_from_top</item>
+        <item name="android:windowExitAnimation">@anim/slide_back_to_top</item>
+    </style>
+
+    <style name="Theme.Design.TopSheetDialog" parent="Theme.MoreOverlays">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">false</item>
+    </style>
+
+</resources>

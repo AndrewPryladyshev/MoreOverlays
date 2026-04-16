@@ -40,21 +40,19 @@
         app:layout_constraintStart_toStartOf="parent"/>
 
 
-    <View
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/previewRight"
         android:layout_width="12dp"
         android:layout_height="140dp"
-        android:background="@drawable/bg_detector_preview_right"
         android:alpha="0.5"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/materialDivider1"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <View
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/previewLeft"
         android:layout_width="12dp"
         android:layout_height="140dp"
-        android:background="@drawable/bg_detector_preview_left"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/materialDivider2"
         app:layout_constraintTop_toTopOf="parent"

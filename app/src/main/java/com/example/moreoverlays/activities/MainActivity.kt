@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.viewModels
@@ -12,19 +13,16 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.example.moreoverlays.ContentTypeData
 import com.example.moreoverlays.R
 import com.example.moreoverlays.viewModels.MainActivityViewModel
 import com.example.moreoverlays.database.AppData
-import com.example.moreoverlays.database.OverlayConfig
 import com.example.moreoverlays.databinding.ActivityMainBinding
-import com.example.moreoverlays.databinding.FragmentAppearanceBinding
-import com.example.moreoverlays.fragments.AppearanceFragment
+import com.example.moreoverlays.appearance_settings.AppearanceFragment
 import com.example.moreoverlays.fragments.HandleSettingsFragment
 import com.example.moreoverlays.fragments.MainFragment
-import com.example.moreoverlays.fragments.OverlaySettingsFragment
 import com.example.moreoverlays.fragments.ViewSettingsFragment
-import com.example.moreoverlays.services.MyAccessibilityService
+import androidx.core.content.edit
+import com.example.moreoverlays.appearance_settings.AdvancedAppearanceSettingsFragment
 
 
 class MainActivity : AppCompatActivity() {
@@ -68,7 +66,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val currentMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-        val isCurrentlyDark = currentMode == Configuration.UI_MODE_NIGHT_YES
+//        val isCurrentlyDark = currentMode == Configuration.UI_MODE_NIGHT_YES
 
         binding.toggleThemeBtn.setOnClickListener {
             val currentMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
@@ -134,6 +132,20 @@ class MainActivity : AppCompatActivity() {
             .replace(binding.fragmentContainer.id, handleFragment)
             .addToBackStack(null)
             .commit()
+        binding.toolbar.visibility = View.VISIBLE
+    }
+
+    fun openAdvancedSettingsFragment() {
+//        val bundle = Bundle().apply {
+//            putInt("side", side)
+//        }
+        val handleFragment = AdvancedAppearanceSettingsFragment()
+//        handleFragment.arguments = bundle
+
+        supportFragmentManager.beginTransaction()
+            .replace(binding.fragmentContainer.id, handleFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     fun openAppearanceSettingsFragment() {
@@ -146,18 +158,20 @@ class MainActivity : AppCompatActivity() {
             .replace(binding.fragmentContainer.id, appearanceFragment)
             .addToBackStack(null)
             .commit()
+
+        binding.toolbar.visibility = View.GONE
     }
 
     private fun saveThemeMode(isDark: Boolean) {
         getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-            .edit()
-            .putBoolean(THEME_KEY, isDark)
-            .apply()
+            .edit {
+                putBoolean(THEME_KEY, isDark)
+            }
     }
 
     private fun getSavedThemeMode(): Int {
         val isDark = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-            .getBoolean(THEME_KEY, false)
+            .getBoolean(THEME_KEY, true)
 
         return if (isDark) {
             AppCompatDelegate.MODE_NIGHT_YES

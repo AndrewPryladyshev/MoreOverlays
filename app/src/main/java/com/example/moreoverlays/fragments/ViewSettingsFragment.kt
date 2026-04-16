@@ -32,7 +32,7 @@ class ViewSettingsFragment : Fragment(R.layout.fragment_view_settings) {
 
     private lateinit var selectedAppsRecyclerView: RecyclerView
     private lateinit var allAppsRecyclerView: RecyclerView
-    private lateinit var saveButton: MaterialButton
+    //private lateinit var saveButton: MaterialButton
 
     private val viewModel: MainActivityViewModel by activityViewModels()
     private var _binding: FragmentViewSettingsBinding? = null
@@ -65,7 +65,7 @@ class ViewSettingsFragment : Fragment(R.layout.fragment_view_settings) {
         super.onViewCreated(view, savedInstanceState)
 
         allAppsRecyclerView = view.findViewById(R.id.allAppsRV)
-        saveButton = view.findViewById(R.id.save_btn)
+        //saveButton = view.findViewById(R.id.save_btn)
 
         val contentTypeId = arguments?.getInt("contentTypeDataId")
         val overlayConfigId = arguments?.getInt("overlayConfigId")
