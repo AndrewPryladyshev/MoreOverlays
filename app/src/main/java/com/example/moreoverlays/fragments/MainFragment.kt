@@ -1,28 +1,25 @@
 package com.example.moreoverlays.fragments
 
+import android.app.ActivityManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
+import android.provider.Settings
 import android.view.LayoutInflater
-import androidx.fragment.app.Fragment
 import android.view.View
 import android.view.ViewGroup
 import androidx.cardview.widget.CardView
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.example.moreoverlays.R
-import com.example.moreoverlays.viewModels.MainActivityViewModel
 import com.example.moreoverlays.activities.MainActivity
-import com.example.moreoverlays.adapters.RootOverlaysRecyclerViewAdapter
 import com.example.moreoverlays.database.OverlayConfig
 import com.example.moreoverlays.databinding.FragmentMainBinding
 import com.example.moreoverlays.utils.LEFT_SIDE
 import com.example.moreoverlays.utils.RIGHT_SIDE
+import com.example.moreoverlays.viewModels.MainActivityViewModel
 import com.google.android.material.button.MaterialButton
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
-import android.provider.Settings
 
 class MainFragment : Fragment(R.layout.fragment_main) {
 
@@ -53,7 +50,7 @@ class MainFragment : Fragment(R.layout.fragment_main) {
 
         rightHandleCV = binding.cardRightHandle
         leftHandleCV = binding.cardLeftHandle
-        appearanceBtn = binding.btnAppearance
+//        appearanceBtn = binding.btnAppearance
 
         rightHandleCV.setOnClickListener {
             (activity as? MainActivity)?.openHandleSettingsFragment(RIGHT_SIDE)
@@ -63,19 +60,32 @@ class MainFragment : Fragment(R.layout.fragment_main) {
             (activity as? MainActivity)?.openHandleSettingsFragment(LEFT_SIDE)
         }
 
-        appearanceBtn.setOnClickListener {
-            (activity as? MainActivity)?.openAppearanceSettingsFragment()
-        }
+//        appearanceBtn.setOnClickListener {
+//            (activity as? MainActivity)?.openAppearanceSettingsFragment()
+//        }
 
-        binding.switchMasterToggle.setOnCheckedChangeListener {_, _ ->
+        // FOR SERVICE STATUS TRACKING
+//        binding.switchMasterToggle.isClickable = false
+//        binding.switchMasterToggle.setOnCheckedChangeListener {_, isChecked ->
+//            if (isChecked) {
+//                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+//                startActivity(intent)
+//            }
+//
+//        }
+//
+//        val activityManager = requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+//        val isServiceRunning = activityManager.runningAppProcesses.any { it.processName == ":overlay_process" }
+//
+//        binding.switchMasterToggle.isChecked = isServiceRunning
+
+        binding.cardServiceStatus.setOnClickListener {
             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
             startActivity(intent)
         }
 
-
-
 //        overlaysRecyclerView = view.findViewById(R.id.overlaysRecyclerView)
-//        // TODO: CHANGE DATA GETTING FROM THIS TO DB
+//
 //        val prefs = requireContext().getSharedPreferences("global_prefs", MODE_PRIVATE)
 //        val jsonString = prefs.getString("overlay_list", null)
 //        Log.d("MainFragmentJsonDebugging", "$jsonString")

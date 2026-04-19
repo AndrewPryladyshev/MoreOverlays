@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.moreoverlays.America
@@ -55,7 +56,9 @@ class AppsListAdapter(private val onItemClicked: (Boolean, AppData) -> Unit, ) :
 //            holder.itemView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
 //        }
 
+        var isClickableForClickable = true
         val currentItemInAppData = AppData(currentItem.packageName, currentItem.appName)
+
 
 
         if (holder.itemView.isClickable) {
@@ -76,6 +79,12 @@ class AppsListAdapter(private val onItemClicked: (Boolean, AppData) -> Unit, ) :
 //
 //                }
 
+                if (alreadyAddedApps.size < 4) {
+                    isClickableForClickable = true
+                }
+                else if (alreadyAddedApps.size == 4) {
+                    isClickableForClickable = false
+                }
 
 
                 val currentlyAdded = alreadyAddedApps.any { it.packageName == currentItem.packageName }
@@ -84,16 +93,19 @@ class AppsListAdapter(private val onItemClicked: (Boolean, AppData) -> Unit, ) :
                     alreadyAddedApps.removeIf { it.packageName == currentItem.packageName }
                     holder.itemView.isSelected = false
                     onItemClicked(false, currentItemInAppData)
-                } else {
+                } else if (isClickableForClickable) {
                     alreadyAddedApps.add(currentItem)
                     holder.itemView.isSelected = true
                     onItemClicked(true, currentItemInAppData)
                 }
+                else {
+                    Toast.makeText(holder.itemView.context, "Currently the limit of apps is 4", Toast.LENGTH_SHORT).show()
+                }
 
-//                notifyItemChanged(position)
 
             }
         }
+
 
     }
 

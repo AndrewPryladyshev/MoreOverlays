@@ -21,17 +21,19 @@
             app:cardBackgroundColor="?attr/colorPrimaryContainer"
             app:cardCornerRadius="16dp">
             
-            <RelativeLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp">
+                android:padding="16dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true" >
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -47,14 +49,21 @@
                         android:textColor="?attr/colorOnPrimaryContainer" />
                 </LinearLayout>
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switch_master_toggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:checked="false" />
+<!--                <com.google.android.material.materialswitch.MaterialSwitch-->
+<!--                    android:id="@+id/switch_master_toggle"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_alignParentEnd="true"-->
+<!--                    android:checked="false" />-->
 
-            </RelativeLayout>
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/enableAccessibility"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    app:tint="?attr/colorOnPrimaryContainer"
+                    android:src="@drawable/ic_chevron_right_foreground" />
+
+            </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <TextView
@@ -162,44 +171,44 @@
         </com.google.android.material.card.MaterialCardView>
 
 
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="16dp"
-            style="?attr/materialCardViewFilledStyle">
+<!--        <com.google.android.material.card.MaterialCardView-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginBottom="16dp"-->
+<!--            app:cardCornerRadius="16dp"-->
+<!--            style="?attr/materialCardViewFilledStyle">-->
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Settings"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:layout_marginBottom="12dp"/>
+<!--            <LinearLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:orientation="vertical"-->
+<!--                android:padding="16dp">-->
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Settings"-->
+<!--                    android:textAppearance="?attr/textAppearanceTitleMedium"-->
+<!--                    android:layout_marginBottom="12dp"/>-->
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_appearance"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Appearance"
-                    app:cornerRadius="12dp"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_marginBottom="8dp"/>
+<!--                <com.google.android.material.button.MaterialButton-->
+<!--                    android:id="@+id/btn_appearance"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Appearance"-->
+<!--                    app:cornerRadius="12dp"-->
+<!--                    style="@style/Widget.Material3.Button.TonalButton"-->
+<!--                    android:layout_marginBottom="8dp"/>-->
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_sensitivity"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Touch Sensitivity"
-                    app:cornerRadius="12dp"
-                    style="@style/Widget.Material3.Button.TonalButton"/>
+<!--                <com.google.android.material.button.MaterialButton-->
+<!--                    android:id="@+id/btn_sensitivity"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Touch Sensitivity"-->
+<!--                    app:cornerRadius="12dp"-->
+<!--                    style="@style/Widget.Material3.Button.TonalButton"/>-->
 
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+<!--            </LinearLayout>-->
+<!--        </com.google.android.material.card.MaterialCardView>-->
 
 <!--        <com.google.android.material.card.MaterialCardView-->
 <!--            android:id="@+id/card_accessibility"-->

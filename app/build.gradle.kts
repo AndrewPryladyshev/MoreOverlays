@@ -5,7 +5,7 @@ plugins {
     id("kotlin-parcelize")
     id("com.google.devtools.ksp") version "2.3.2"
     kotlin("plugin.serialization") version "1.9.0"
-
+    id("com.github.jk1.dependency-license-report") version "3.1.2"
 }
 
 android {
@@ -55,6 +55,7 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
 }
 
 dependencies {
@@ -92,5 +93,8 @@ dependencies {
 
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
 
+licenseReport {
+    configurations = arrayOf("releaseRuntimeClasspath", "debugRuntimeClasspath")
 }
