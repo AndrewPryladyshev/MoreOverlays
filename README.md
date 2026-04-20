@@ -1,6 +1,6 @@
 ## License
 
-Please, read the [LICENSE.txt](https://github.com/AndrewPryladyshev/MoreOverlays?tab=License-1-ov-file "My license") file first.
+Please, read the [LICENSE.txt](https://github.com/AndrewPryladyshev/MoreOverlays/tree/develop/alpha?tab=License-1-ov-file "My license") file first.
 
 # More Overlays
 
