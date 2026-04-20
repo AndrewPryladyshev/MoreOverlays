@@ -21,6 +21,11 @@ class AccessibilityAppsListAdapter(private val onItemClicked: (AppData) -> Unit)
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val appIcon: ImageView = itemView.findViewById(R.id.iv_app_icon)
     }
+/*
+ * Copyright (c) 2026 Andrii Pryladyshev.
+ * Licensed under the terms defined in the file 'LICENSE.txt',
+ * located in the root directory of this project.
+ */
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) : ViewHolder {
 

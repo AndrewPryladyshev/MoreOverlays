@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2026 Andrii Pryladyshev.
+ *              PROPRIETARY AND NON-COMMERCIAL SOURCE-AVAILABLE LICENSE
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to view
+ * the source code and execute the Software solely for personal, non-commercial,
+ * and educational purposes, subject to the following conditions:
+ *
+ * 1. OWNERSHIP: The Software and all intellectual property rights therein are
+ *    and shall remain the sole and exclusive property of Andrii Pryladyshev.
+ *
+ * 2. RESTRICTIONS:
+ *    - COMMERCIAL USE: You may not use the Software, or any portion thereof,
+ *      for any commercial purposes, including but not limited to selling,
+ *      leasing, or using it as part of a paid service.
+ *    - MODIFICATION: You may not modify, adapt, transform, or create
+ *      derivative works based upon the Software.
+ *    - REDISTRIBUTION: You may not redistribute, publish, or host the
+ *      Software on any other public platforms or repositories.
+ *
+ * 3. COPYRIGHT NOTICE: The above copyright notice and this permission notice
+ *    shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package com.example.moreoverlays.viewModels
 
 import android.app.Application
@@ -41,6 +74,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.core.content.edit
 
 
 class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
@@ -90,7 +124,7 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
                     configsRepository.insert(defaultOverlays)
 
                     withContext(Dispatchers.Main) {
-                        sharedPrefs.edit().putBoolean("isFirstLaunch", false).apply()
+                        sharedPrefs.edit { putBoolean("isFirstLaunch", false) }
                     }
                 } catch (e: Exception) {
                     Log.e("VM_DEBUG", "Error during first launch data seeding", e)
@@ -104,14 +138,14 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     private fun createDefaultOverlays() : List<OverlayConfig> {
         return listOf(
             OverlayConfig(CATCHER_OVERLAY, "", WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT, 0, 0, mutableListOf(), NOTHING),
-            OverlayConfig(MAIN_OVERLAY_RIGHT, "",40, 350, 0, 1000, mutableListOf(), NOTHING),
-            OverlayConfig(MAIN_OVERLAY_LEFT, "",40, 350, 0, 1000, mutableListOf(), NOTHING),
+            OverlayConfig(MAIN_OVERLAY_RIGHT, "",40, 350, 0, 0, mutableListOf(), NOTHING),
+            OverlayConfig(MAIN_OVERLAY_LEFT, "",40, 350, 0, 0, mutableListOf(), NOTHING),
             OverlayConfig(DOWN_SWIPE_RIGHT_SIDE_OVERLAY, "Right Down Swipe Overlay", WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, 0, 0, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
-            OverlayConfig(LEFT_SWIPE_OVERLAY, "Left Swipe Overlay", WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, 0, 500, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
-            OverlayConfig(UP_SWIPE_RIGHT_SIDE_OVERLAY, "Right Up Swipe Overlay", WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
-            OverlayConfig(DOWN_SWIPE_LEFT_SIDE_OVERLAY, "Left Down Swipe Overlay",40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
-            OverlayConfig(RIGHT_SWIPE_OVERLAY, "Right Swipe Overlay",40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
-            OverlayConfig(UP_SWIPE_LEFT_SIDE_OVERLAY, "Left Up Swipe Overlay",40, 500, 0, 100, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
+            OverlayConfig(LEFT_SWIPE_OVERLAY, "Left Swipe Overlay", WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, 0, 0, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
+            OverlayConfig(UP_SWIPE_RIGHT_SIDE_OVERLAY, "Right Up Swipe Overlay", WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,0, 0, mutableListOf(Apps(0, mutableListOf(),"name")), RIGHT_SIDE),
+            OverlayConfig(DOWN_SWIPE_LEFT_SIDE_OVERLAY, "Left Down Swipe Overlay",WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, 0, 0, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
+            OverlayConfig(RIGHT_SWIPE_OVERLAY, "Right Swipe Overlay",WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, 0, 0, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
+            OverlayConfig(UP_SWIPE_LEFT_SIDE_OVERLAY, "Left Up Swipe Overlay",WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, 0, 0, mutableListOf(Apps(0, mutableListOf(),"name")), LEFT_SIDE),
         )
     }
 

@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2026 Andrii Pryladyshev.
+ *              PROPRIETARY AND NON-COMMERCIAL SOURCE-AVAILABLE LICENSE
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to view
+ * the source code and execute the Software solely for personal, non-commercial,
+ * and educational purposes, subject to the following conditions:
+ *
+ * 1. OWNERSHIP: The Software and all intellectual property rights therein are
+ *    and shall remain the sole and exclusive property of Andrii Pryladyshev.
+ *
+ * 2. RESTRICTIONS:
+ *    - COMMERCIAL USE: You may not use the Software, or any portion thereof,
+ *      for any commercial purposes, including but not limited to selling,
+ *      leasing, or using it as part of a paid service.
+ *    - MODIFICATION: You may not modify, adapt, transform, or create
+ *      derivative works based upon the Software.
+ *    - REDISTRIBUTION: You may not redistribute, publish, or host the
+ *      Software on any other public platforms or repositories.
+ *
+ * 3. COPYRIGHT NOTICE: The above copyright notice and this permission notice
+ *    shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package com.example.moreoverlays.services
 
 import android.accessibilityservice.AccessibilityService
@@ -17,16 +50,21 @@ import android.view.WindowManager.LayoutParams
 import android.view.accessibility.AccessibilityEvent
 import android.view.animation.DecelerateInterpolator
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import androidx.compose.ui.unit.dp
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.moreoverlays.Apps
+import com.example.moreoverlays.Notes
 import com.example.moreoverlays.R
 import com.example.moreoverlays.database.AppDatabase
 import com.example.moreoverlays.database.ConfigsRepository
 import com.example.moreoverlays.database.OverlayConfig
+import com.example.moreoverlays.database.Widgets
 import com.example.moreoverlays.utils.CATCHER_OVERLAY
 import com.example.moreoverlays.utils.DOWN_SWIPE_LEFT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.DOWN_SWIPE_RIGHT_SIDE_OVERLAY
+import com.example.moreoverlays.utils.LEFT_SIDE
 import com.example.moreoverlays.utils.LEFT_SWIPE_OVERLAY
 import com.example.moreoverlays.utils.MAIN_OVERLAY_LEFT
 import com.example.moreoverlays.utils.MAIN_OVERLAY_RIGHT
@@ -35,6 +73,7 @@ import com.example.moreoverlays.utils.RIGHT_SWIPE_OVERLAY
 import com.example.moreoverlays.utils.UP_SWIPE_LEFT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.UP_SWIPE_RIGHT_SIDE_OVERLAY
 import com.example.moreoverlays.utils.createAppData
+import com.example.moreoverlays.utils.dpToPx
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -114,7 +153,7 @@ class MyAccessibilityService : AccessibilityService() {
 
         overlayList.forEach { config ->
             val root = createRootView(config)
-
+            root.tag = config.side
             if (config.id !in listOf(MAIN_OVERLAY_LEFT, MAIN_OVERLAY_RIGHT, CATCHER_OVERLAY)) {
                 val content = createContent(config)
                 root.addView(content)
@@ -137,7 +176,9 @@ class MyAccessibilityService : AccessibilityService() {
         val layout = FrameLayout(this)
         layout.apply {
             id = config.id
-            setBackgroundColor(if (id == MAIN_OVERLAY_LEFT || id == MAIN_OVERLAY_RIGHT) Color.DKGRAY else Color.TRANSPARENT)
+
+            setBackgroundColor(Color.TRANSPARENT)
+//            setBackgroundColor(if (id == MAIN_OVERLAY_LEFT || id == MAIN_OVERLAY_RIGHT) Color.DKGRAY else Color.TRANSPARENT)
 
             if (config.id in listOf(MAIN_OVERLAY_LEFT, MAIN_OVERLAY_RIGHT, CATCHER_OVERLAY)) {
                 setOnTouchListener { view, event ->
@@ -145,14 +186,25 @@ class MyAccessibilityService : AccessibilityService() {
                     if (view.id != CATCHER_OVERLAY) view.performClick()
                     true
                 }
+                when (id) {
+                    MAIN_OVERLAY_LEFT, MAIN_OVERLAY_RIGHT -> {
+                        val view: View = View(layout.context)
+                        val layoutParams = FrameLayout.LayoutParams(
+                            dpToPx(8),
+                            FrameLayout.LayoutParams.MATCH_PARENT
+                        ).apply {
+                            gravity = if (id == MAIN_OVERLAY_LEFT) Gravity.START else Gravity.END
+                        }
+                        view.layoutParams = layoutParams
+                        view.setBackgroundResource(if (id == MAIN_OVERLAY_LEFT) R.drawable.bg_detector_left else R.drawable.bg_detector_right)
+
+                        layout.addView(view)
+                    }
+                }
+
+
             }
 
-        }
-        if (config.id !in listOf(MAIN_OVERLAY_LEFT, MAIN_OVERLAY_RIGHT, CATCHER_OVERLAY)) {
-            layout.layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            )
         }
         return layout
     }
@@ -183,16 +235,27 @@ class MyAccessibilityService : AccessibilityService() {
         val flags = LayoutParams.FLAG_NOT_FOCUSABLE or LayoutParams.FLAG_NOT_TOUCH_MODAL
 
         val params = LayoutParams().apply {
-            width = if (config.id == CATCHER_OVERLAY) LayoutParams.MATCH_PARENT else config.width
+            width = when (config.id) {
+                CATCHER_OVERLAY -> LayoutParams.MATCH_PARENT
+                MAIN_OVERLAY_LEFT, MAIN_OVERLAY_RIGHT -> dpToPx(config.width)
+                else -> LayoutParams.WRAP_CONTENT
+            }
             height = if (config.id == CATCHER_OVERLAY) LayoutParams.MATCH_PARENT else config.height
             this.type = LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
             this.flags = if (config.id == CATCHER_OVERLAY) LayoutParams.FLAG_NOT_FOCUSABLE else flags
             format = PixelFormat.TRANSLUCENT
             gravity = when (config.id) {
-                MAIN_OVERLAY_LEFT -> Gravity.BOTTOM or Gravity.START
-                MAIN_OVERLAY_RIGHT -> Gravity.BOTTOM or Gravity.END
+                MAIN_OVERLAY_LEFT -> {
+                    Gravity.START or Gravity.CENTER_VERTICAL
+                }
+                MAIN_OVERLAY_RIGHT -> {
+                    Gravity.END or Gravity.CENTER_VERTICAL
+                }
                 CATCHER_OVERLAY -> Gravity.FILL
-                else -> if (config.side == RIGHT_SIDE) Gravity.BOTTOM or Gravity.END else Gravity.BOTTOM or Gravity.START
+                else -> {
+                    val horizontalSide = if (config.side == RIGHT_SIDE) Gravity.END else Gravity.START
+                    horizontalSide or Gravity.CENTER_VERTICAL
+                }
             }
             x = config.x
             y = config.y
@@ -249,10 +312,31 @@ class MyAccessibilityService : AccessibilityService() {
             else -> null
         }
         Log.d("TAG", "$targetOverlayId")
+
         if (targetOverlayId != null) {
-            showMenu(targetOverlayId)
+            val targetConfig = overlayList.find { it.id == targetOverlayId }
+
+            if (targetConfig != null && isConfigActive(targetConfig)) {
+                showMenu(targetOverlayId)
+            }
         }
     }
+
+
+    private fun isConfigActive(config: OverlayConfig): Boolean {
+        // Если список типов контента пуст вообще — оверлей неактивен
+        if (config.contentTypes.isEmpty()) return false
+
+        // Проверяем конкретное содержимое (например, список приложений)
+        return config.contentTypes.any { content ->
+            when (content) {
+                is Apps -> content.apps.isNotEmpty()
+                is Notes -> true
+                else -> false
+            }
+        }
+    }
+
 
     private fun showMenu(id: Int) {
 
@@ -283,9 +367,11 @@ class MyAccessibilityService : AccessibilityService() {
 
     private fun animateSlideIn(view: View?) {
         if (view != null) {
-            val width = view.width.toFloat()
-            view.translationX = width
-            ObjectAnimator.ofFloat(view, "translationX", width, 0f).apply {
+            val side = view.tag as? Int ?: RIGHT_SIDE
+            val startX = if (side == RIGHT_SIDE) view.width.toFloat() else -view.width.toFloat()
+
+            view.translationX = startX
+            ObjectAnimator.ofFloat(view, "translationX", startX, 0f).apply {
                 duration = 200
                 interpolator = DecelerateInterpolator()
                 start()
@@ -294,9 +380,10 @@ class MyAccessibilityService : AccessibilityService() {
     }
 
     private fun animateSlideOut(view: View) {
-        val width = view.width.toFloat()
-        view.translationX = width
-        ObjectAnimator.ofFloat(view, "translationX", 0f, width).apply {
+        val side = view.tag as? Int ?: RIGHT_SIDE
+        val endX = if (side == RIGHT_SIDE) view.width.toFloat() else -view.width.toFloat()
+
+        ObjectAnimator.ofFloat(view, "translationX", 0f, endX).apply {
             duration = 200
             interpolator = DecelerateInterpolator()
             addListener(object : AnimatorListenerAdapter() {

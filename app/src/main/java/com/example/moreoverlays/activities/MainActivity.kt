@@ -1,3 +1,36 @@
+/*
+ * Copyright (c) 2026 Andrii Pryladyshev.
+ *              PROPRIETARY AND NON-COMMERCIAL SOURCE-AVAILABLE LICENSE
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to view
+ * the source code and execute the Software solely for personal, non-commercial,
+ * and educational purposes, subject to the following conditions:
+ *
+ * 1. OWNERSHIP: The Software and all intellectual property rights therein are
+ *    and shall remain the sole and exclusive property of Andrii Pryladyshev.
+ *
+ * 2. RESTRICTIONS:
+ *    - COMMERCIAL USE: You may not use the Software, or any portion thereof,
+ *      for any commercial purposes, including but not limited to selling,
+ *      leasing, or using it as part of a paid service.
+ *    - MODIFICATION: You may not modify, adapt, transform, or create
+ *      derivative works based upon the Software.
+ *    - REDISTRIBUTION: You may not redistribute, publish, or host the
+ *      Software on any other public platforms or repositories.
+ *
+ * 3. COPYRIGHT NOTICE: The above copyright notice and this permission notice
+ *    shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package com.example.moreoverlays.activities
 
 import android.content.Intent
@@ -7,22 +40,22 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.edit
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.moreoverlays.R
-import com.example.moreoverlays.viewModels.MainActivityViewModel
+import com.example.moreoverlays.appearance_settings.AdvancedAppearanceSettingsFragment
+import com.example.moreoverlays.appearance_settings.AppearanceFragment
 import com.example.moreoverlays.database.AppData
 import com.example.moreoverlays.databinding.ActivityMainBinding
-import com.example.moreoverlays.appearance_settings.AppearanceFragment
 import com.example.moreoverlays.fragments.HandleSettingsFragment
 import com.example.moreoverlays.fragments.MainFragment
 import com.example.moreoverlays.fragments.ViewSettingsFragment
-import androidx.core.content.edit
-import com.example.moreoverlays.appearance_settings.AdvancedAppearanceSettingsFragment
+import com.example.moreoverlays.viewModels.MainActivityViewModel
 
 
 class MainActivity : AppCompatActivity() {
@@ -43,6 +76,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.main)
         setSupportActionBar(binding.toolbar)
@@ -116,6 +150,12 @@ class MainActivity : AppCompatActivity() {
         viewSettingsFragment.arguments = bundle
 
         supportFragmentManager.beginTransaction()
+            .setCustomAnimations(
+            R.anim.slide_in_right,
+            R.anim.slide_out_left,
+            R.anim.slide_in_left,
+            R.anim.slide_out_right
+            )
             .replace(binding.fragmentContainer.id, viewSettingsFragment)
             .addToBackStack(null)
             .commit()
@@ -129,6 +169,12 @@ class MainActivity : AppCompatActivity() {
         handleFragment.arguments = bundle
 
         supportFragmentManager.beginTransaction()
+            .setCustomAnimations(
+                R.anim.slide_in_right,
+                R.anim.slide_out_left,
+                R.anim.slide_in_left,
+                R.anim.slide_out_right
+            )
             .replace(binding.fragmentContainer.id, handleFragment)
             .addToBackStack(null)
             .commit()
@@ -143,6 +189,12 @@ class MainActivity : AppCompatActivity() {
 //        handleFragment.arguments = bundle
 
         supportFragmentManager.beginTransaction()
+            .setCustomAnimations(
+                R.anim.slide_in_right,
+                R.anim.slide_out_left,
+                R.anim.slide_in_left,
+                R.anim.slide_out_right
+            )
             .replace(binding.fragmentContainer.id, handleFragment)
             .addToBackStack(null)
             .commit()
@@ -155,6 +207,12 @@ class MainActivity : AppCompatActivity() {
         appearanceFragment.arguments = bundle
 
         supportFragmentManager.beginTransaction()
+            .setCustomAnimations(
+                R.anim.slide_in_right,
+                R.anim.slide_out_left,
+                R.anim.slide_in_left,
+                R.anim.slide_out_right
+            )
             .replace(binding.fragmentContainer.id, appearanceFragment)
             .addToBackStack(null)
             .commit()
