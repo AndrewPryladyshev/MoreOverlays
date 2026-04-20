@@ -1,6 +1,6 @@
 ## License
 
-Please, read the LICENSE.txt file first.
+Please, read the [LICENSE.txt](https://github.com/AndrewPryladyshev/MoreOverlays?tab=License-1-ov-file "My license") file first.
 
 # More Overlays
 
@@ -12,7 +12,7 @@ A powerful Android utility that allows you to create floating app overlays using
 
 * **Multiple Overlays:** Support for up to **6 independent overlays**.
 * **App Grids:** Display up to **4 apps** per overlay for quick access.
-* **Dynamic Updates:** Overlays update in real-time. As soon as you select or change an app within the settings, the overlay reflects the change instantly.
+* **Dynamic Updates:** Overlays update in real-time. As soon as you select or change an app, the overlay reflects the change instantly.
 * **Seamless Integration:** Designed to float over any active application.
 
 ---
@@ -41,7 +41,7 @@ If you are using **HyperOS** (or MIUI), additional steps are required to ensure 
 3. Select **"No Restrictions"**.
 4. Ensure "Display over other apps" is also granted in the permissions section.
 
-*Failure to set "No Restrictions" may cause the overlays to disappear or the service to disconnect unexpectedly.*
+*Failure to set "No Restrictions" may cause the overlays to disappear or the service to disconnect unexpectedly. This can be applied to any device*
 
 ---
 
@@ -52,22 +52,3 @@ If you are using **HyperOS** (or MIUI), additional steps are required to ensure 
 3. **Update:** Change your selection anytime; the overlays are dynamic and will refresh immediately.
 
 ---
-
-## 🛠 Technical Details
-
-* **Core:** Built using Kotlin and Android Accessibility Services.
-* **Optimization:** Light memory footprint to ensure smooth performance even while multitasking.
-
----
-
-## 🗺 Roadmap
-
-- [ ] Video tutorial for setup.
-- [ ] Customizable overlay themes and transparency.
-- [ ] Increased limit for apps per overlay.
-
----
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
